@@ -9,14 +9,31 @@ export function getSupabaseConfig() {
   return { url, publishableKey };
 }
 
-// Development/testing access: any user successfully authenticated by Google
-// through Supabase may use the application. Replace this with an explicit
-// approval check before moving to a production staff rollout.
-export function isAllowedUserEmail(email?: string | null) {
-  if (!email) return false;
+export function getStaffAccessResult(email?: string | null) {
+  if (!email) {
+    return { allowed: false, reason: 'missing_email' as const };
+  }
+
   const allowList = (process.env.FUTURE_PLUS_STAFF_EMAILS || '')
-    .split(',')
-    .map((item) => item.trim().toLowerCase())
+    .split(/[,\n;]/)
+    .map((item) => item.trim().replace(/^['"]|['"]$/g, '').toLowerCase())
     .filter(Boolean);
-  return allowList.includes(email.toLowerCase());
+
+  if (!allowList.length) {
+    return { allowed: false, reason: 'allowlist_not_configured' as const };
+  }
+
+  const normalisedEmail = email.trim().toLowerCase();
+  const domain = normalisedEmail.split('@')[1];
+  const allowed = allowList.some((entry) => {
+    if (entry.startsWith('*@')) return domain === entry.slice(2);
+    if (entry.startsWith('@')) return domain === entry.slice(1);
+    return normalisedEmail === entry;
+  });
+
+  return { allowed, reason: allowed ? 'approved' as const : 'not_approved' as const };
+}
+
+export function isAllowedUserEmail(email?: string | null) {
+  return getStaffAccessResult(email).allowed;
 }

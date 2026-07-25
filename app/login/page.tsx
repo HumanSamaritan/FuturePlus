@@ -32,6 +32,7 @@ async function LoginPageContent({ searchParams }: { searchParams?: Promise<{ err
         {params?.error ? <p className="alert">{params.error}</p> : null}
         <p className="muted">Continue with Google to open the Future Plus dashboard.</p>
         <LoginButton />
+        {user ? <p className="help-text">Signed in with {user.email}. You can choose another account above or <a href="/logout"><u>sign out</u></a>.</p> : null}
       </div>
     </section>
   );
