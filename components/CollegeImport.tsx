@@ -40,10 +40,15 @@ export default function CollegeImport() {
         values.push(value);
         return values;
       };
-      const columns = parseLine(lines[0]);
-      const rows = lines.slice(1).map((line) => Object.fromEntries(parseLine(line).map((value, index) => [columns[index], value])));
+      if (lines.length < 2) throw new Error('The CSV is empty or has no data rows.');
+      const columns = parseLine(lines[0]).map((column) => column.trim().toLowerCase());
+      const missing = headers.filter((header) => !columns.includes(header));
+      if (missing.length) throw new Error(`Missing required CSV columns: ${missing.join(', ')}`);
+      const rows = lines.slice(1).map((line) => Object.fromEntries(
+        parseLine(line).map((value, index) => [columns[index], value.trim()])
+      ));
       const result = await importCollegeRowsAction(rows);
-      setMessage(`${result.imported} college/course rows imported successfully.`);
+      setMessage(`${result.updated} college/course rows saved. Refreshing the College Database will show the updates.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Import failed. Please check the template.');
     } finally {

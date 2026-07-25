@@ -165,6 +165,27 @@ nav a:hover {
 .file-button { display: inline-flex; align-items: center; }
 .file-button input { display: none; }
 .import-message { color: var(--primary-2); font-weight: 700; }
+.college-database { padding: 14px; }
+.college-database table { font-size: .78rem; }
+.college-database th, .college-database td { padding: 8px 7px; }
+.college-database th { font-size: .68rem; }
+.row-editor summary { cursor: pointer; color: var(--primary-2); font-weight: 800; }
+.inline-edit-form {
+  position: absolute;
+  right: 32px;
+  z-index: 10;
+  width: min(720px, calc(100vw - 300px));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 18px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+.inline-edit-form label { display: grid; gap: 4px; font-size: .72rem; }
+.inline-edit-form input, .inline-edit-form select { padding: 7px 8px; font-size: .8rem; }
+.inline-edit-form .checkbox-label { display: flex; align-items: center; }
+.inline-edit-form .checkbox-label input { width: auto; }
 
 .hero-card,
 .card,
@@ -456,4 +477,5 @@ pre {
   .workspace-nav { position: static; width: auto; }
   .workspace-nav nav { display: flex; }
   .workspace-nav + main { margin-left: 0; padding: 20px 16px 48px; }
+  .inline-edit-form { position: fixed; inset: 12px; width: auto; overflow-y: auto; grid-template-columns: 1fr; }
 }

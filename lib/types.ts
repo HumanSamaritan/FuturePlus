@@ -30,7 +30,10 @@ export type StudentInput = {
   lastName: string;
   email?: string;
   phone?: string;
-  grade?: string;
+  yearX?: number | null;
+  marksX?: number | null;
+  yearXii?: number | null;
+  marksXii?: number | null;
   board?: string;
   city?: string;
   state?: string;

@@ -100,25 +100,93 @@ export async function addCollegeCourseAction(formData: FormData) {
   revalidatePath('/admin');
 }
 
+export async function updateCollegeCourseAction(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || !isAllowedUserEmail(user.email)) throw new Error('Approved staff access is required.');
+
+  const collegeId = z.string().uuid().parse(formData.get('collegeId'));
+  const courseId = z.string().uuid().parse(formData.get('courseId'));
+  const parsed = CollegeCourseSchema.parse({
+    collegeName: formData.get('collegeName'),
+    city: formData.get('city') || undefined,
+    state: formData.get('state') || undefined,
+    country: formData.get('country') || 'India',
+    partnerStatus: formData.get('partnerStatus') || 'non_partner',
+    commissionBased: formData.get('commissionBased') === 'on',
+    hostelAvailable: formData.get('hostelAvailable') === 'on',
+    sourceUrl: formData.get('sourceUrl') || undefined,
+    pocName: formData.get('pocName') || undefined,
+    pocEmail: formData.get('pocEmail') || undefined,
+    courseName: formData.get('courseName'),
+    subjectArea: formData.get('subjectArea'),
+    duration: formData.get('duration') || undefined,
+    totalFee: formData.get('totalFee') || undefined,
+    placementCount: formData.get('placementCount') || undefined,
+    highestPackage: formData.get('highestPackage') || undefined,
+    averagePackage: formData.get('averagePackage') || undefined,
+    currency: formData.get('currency') || 'INR'
+  });
+
+  const { error: collegeError } = await supabase.from('colleges').update({
+    name: parsed.collegeName,
+    city: parsed.city || null,
+    state: parsed.state || null,
+    country: parsed.country,
+    partner_status: parsed.partnerStatus,
+    commission_based: parsed.commissionBased,
+    hostel_available: parsed.hostelAvailable,
+    source_url: parsed.sourceUrl || null,
+    poc_name: parsed.pocName || null,
+    poc_email: parsed.pocEmail || null,
+    last_reviewed_at: new Date().toISOString()
+  }).eq('id', collegeId);
+  if (collegeError) throw new Error(collegeError.message);
+
+  const { error: courseError } = await supabase.from('courses').update({
+    course_name: parsed.courseName,
+    subject_area: parsed.subjectArea,
+    duration: parsed.duration || null,
+    total_fee: safeNumber(parsed.totalFee),
+    placement_count: safeNumber(parsed.placementCount),
+    highest_package: safeNumber(parsed.highestPackage),
+    average_package: safeNumber(parsed.averagePackage),
+    currency: parsed.currency
+  }).eq('id', courseId).eq('college_id', collegeId);
+  if (courseError) throw new Error(courseError.message);
+
+  revalidatePath('/colleges');
+  revalidatePath('/admin');
+  revalidatePath('/dashboard');
+}
+
+const optionalText = z.preprocess(
+  (value) => typeof value === 'string' ? value.trim() : value,
+  z.string().optional()
+);
+
 const ImportRowSchema = z.object({
-  college_name: z.string().min(1),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  country: z.string().default('India'),
-  poc_name: z.string().optional(),
-  poc_email: z.string().email().optional().or(z.literal('')),
-  partner_status: z.enum(['preferred_partner', 'pipeline_partner', 'non_partner']).default('non_partner'),
+  college_name: z.string().trim().min(1),
+  city: optionalText,
+  state: optionalText,
+  country: z.preprocess((value) => String(value || 'India').trim(), z.string().default('India')),
+  poc_name: optionalText,
+  poc_email: z.preprocess((value) => String(value || '').trim(), z.string().email().optional().or(z.literal(''))),
+  partner_status: z.preprocess(
+    (value) => String(value || 'non_partner').trim().toLowerCase(),
+    z.enum(['preferred_partner', 'pipeline_partner', 'non_partner'])
+  ),
   commission_based: z.union([z.boolean(), z.string()]).optional(),
   hostel_available: z.union([z.boolean(), z.string()]).optional(),
-  source_url: z.string().url().optional().or(z.literal('')),
-  course_name: z.string().min(1),
-  subject_area: z.string().min(1),
-  duration: z.string().optional(),
+  source_url: z.preprocess((value) => String(value || '').trim(), z.string().url().optional().or(z.literal(''))),
+  course_name: z.string().trim().min(1),
+  subject_area: z.string().trim().min(1),
+  duration: optionalText,
   total_fee: z.union([z.number(), z.string()]).optional(),
   placement_count: z.union([z.number(), z.string()]).optional(),
   highest_package: z.union([z.number(), z.string()]).optional(),
   average_package: z.union([z.number(), z.string()]).optional(),
-  currency: z.string().default('INR')
+  currency: z.preprocess((value) => String(value || 'INR').trim().toUpperCase(), z.string().default('INR'))
 });
 
 const truthy = (value: unknown) => ['true', 'yes', '1', 'y'].includes(String(value).toLowerCase());
@@ -129,7 +197,7 @@ export async function importCollegeRowsAction(rows: unknown[]) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || !isAllowedUserEmail(user.email)) throw new Error('Approved staff access is required.');
 
-  const parsedRows = z.array(ImportRowSchema).max(1000).parse(rows);
+  const parsedRows = z.array(ImportRowSchema).min(1, 'The CSV contains no data rows.').max(1000).parse(rows);
   for (const row of parsedRows) {
     const { data: college, error: collegeError } = await supabase.from('colleges').upsert({
       name: row.college_name,
@@ -162,5 +230,5 @@ export async function importCollegeRowsAction(rows: unknown[]) {
   revalidatePath('/colleges');
   revalidatePath('/admin');
   revalidatePath('/dashboard');
-  return { imported: parsedRows.length };
+  return { imported: parsedRows.length, updated: parsedRows.length };
 }

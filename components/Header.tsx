@@ -2,13 +2,17 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
 import { isAllowedUserEmail } from '@/lib/env';
+import { headers } from 'next/headers';
+import { unstable_noStore as noStore } from 'next/cache';
 
 export default async function Header() {
+  noStore();
+  const pathname = (await headers()).get('x-future-plus-pathname') || '/';
   const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
-  const isStaff = Boolean(user && isAllowedUserEmail(user.email));
+  const isStaff = pathname !== '/' && Boolean(user && isAllowedUserEmail(user.email));
 
   return (
     <header className={`site-header ${isStaff ? 'workspace-nav' : 'public-nav'}`}>
@@ -41,7 +45,8 @@ export default async function Header() {
             <Link href="/#about">About</Link>
             <Link href="/#programmes">Programmes</Link>
             <Link href="/#colleges">Colleges</Link>
-            <a href="https://www.facebook.com/profile.php?id=100092495494998&mibextid=ZbWKwL" target="_blank" rel="noreferrer">Facebook</a>
+            <a href="https://futureplusedus.com/" target="_blank" rel="noreferrer">Future Plus Website</a>
+            <a href="https://www.facebook.com/share/1BcYydGmG2/?mibextid=wwXIfr" target="_blank" rel="noreferrer">Facebook</a>
             <Link href="/login" className="nav-login">Future Plus Staff Login</Link>
           </>
         )}

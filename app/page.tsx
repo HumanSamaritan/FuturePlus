@@ -1,5 +1,8 @@
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const programmes = ['MBA & PGDM', 'B.Tech', 'BBA & BCA', 'MBBS & BDS', 'Law', 'Study Abroad'];
 const cities = ['Pune', 'Bangalore', 'Delhi', 'Mumbai', 'Bhubaneswar', 'Hyderabad'];
 

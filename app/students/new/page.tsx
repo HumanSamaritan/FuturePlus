@@ -41,12 +41,24 @@ export default async function NewStudentPage() {
               <input id="phone" name="phone" />
             </div>
             <div className="field">
-              <label htmlFor="grade">Current grade / class</label>
-              <input id="grade" name="grade" placeholder="e.g. Class 12" />
-            </div>
-            <div className="field">
               <label htmlFor="board">Board / curriculum</label>
               <input id="board" name="board" placeholder="CBSE, ISC, IB, State Board" />
+            </div>
+            <div className="field">
+              <label htmlFor="yearX">Year for X Standard</label>
+              <input id="yearX" name="yearX" type="number" min="1950" max="2100" placeholder="e.g. 2024" />
+            </div>
+            <div className="field">
+              <label htmlFor="marksX">Marks in X (%)</label>
+              <input id="marksX" name="marksX" type="number" min="0" max="100" step="0.01" />
+            </div>
+            <div className="field">
+              <label htmlFor="yearXii">Year for XII</label>
+              <input id="yearXii" name="yearXii" type="number" min="1950" max="2100" placeholder="e.g. 2026" />
+            </div>
+            <div className="field">
+              <label htmlFor="marksXii">Marks in XII (%)</label>
+              <input id="marksXii" name="marksXii" type="number" min="0" max="100" step="0.01" />
             </div>
           </div>
         </div>

@@ -38,6 +38,9 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
       <div className="grid grid-2">
         <div className="card">
           <h2>Requirement</h2>
+          <p><strong>Class X:</strong> {student.marks_x ?? '-'}% {student.year_x ? `(${student.year_x})` : ''}</p>
+          <p><strong>Class XII:</strong> {student.marks_xii ?? '-'}% {student.year_xii ? `(${student.year_xii})` : ''}</p>
+          <p><strong>Board:</strong> {student.board || '-'}</p>
           <p><strong>Subjects:</strong> {student.subjects_interest?.join(', ') || '-'}</p>
           <p><strong>Locations:</strong> {student.preferred_locations?.join(', ') || '-'}</p>
           <p><strong>Fee range:</strong> {student.budget_min || '-'} to {student.budget_max || '-'} INR</p>
