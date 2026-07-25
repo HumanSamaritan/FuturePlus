@@ -29,6 +29,11 @@ not make the database public; unauthenticated requests remain blocked by RLS.
    production URL ending in `/auth/callback` is listed.
 6. Test in a private browser window.
 
+The Google sign-in is initiated through `/auth/login`, which creates the PKCE
+verifier on the server before redirecting to Google. The callback then exchanges
+the returned code and writes the Supabase session cookie before opening the
+dashboard.
+
 ## Production warning
 
 Before opening the application to real users, replace testing access with an

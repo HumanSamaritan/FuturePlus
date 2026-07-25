@@ -3,5 +3,10 @@ import { getSupabaseConfig } from '@/lib/env';
 
 export function createClient() {
   const { url, publishableKey } = getSupabaseConfig();
-  return createBrowserClient(url, publishableKey);
+  return createBrowserClient(url, publishableKey, {
+    auth: {
+      flowType: 'pkce',
+      detectSessionInUrl: true
+    }
+  });
 }
