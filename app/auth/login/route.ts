@@ -20,7 +20,9 @@ export async function GET(request: NextRequest) {
   const supabase = createServerClient(url, publishableKey, {
     cookies: {
       getAll: () => request.cookies.getAll(),
-      setAll: (cookiesToSet) => pendingCookies.push(...cookiesToSet)
+      setAll: (cookiesToSet) => {
+        pendingCookies.push(...cookiesToSet);
+      }
     }
   });
   const { data, error } = await supabase.auth.signInWithOAuth({
