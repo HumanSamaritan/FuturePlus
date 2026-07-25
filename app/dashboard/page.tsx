@@ -12,7 +12,7 @@ export default async function DashboardPage() {
     supabase.from('courses').select('*', { count: 'exact', head: true }),
     supabase
       .from('students')
-      .select('id, first_name, last_name, email, status, score, future_plus_id, created_at, subjects_interest')
+      .select('id, first_name, last_name, email, status, score, future_plus_id, created_at, subjects_interest, assigned_staff_name, assigned_staff_email')
       .order('created_at', { ascending: false })
       .limit(12)
   ]);
@@ -52,6 +52,7 @@ export default async function DashboardPage() {
                 <th>Subjects</th>
                 <th>Status</th>
                 <th>Future Plus ID</th>
+                <th>Managing Staff</th>
                 <th>Score</th>
               </tr>
             </thead>
@@ -65,11 +66,15 @@ export default async function DashboardPage() {
                   <td>{student.subjects_interest?.join(', ') || '-'}</td>
                   <td><span className="badge">{student.status}</span></td>
                   <td>{student.future_plus_id || '-'}</td>
+                  <td>
+                    <strong>{student.assigned_staff_name || 'Not assigned'}</strong><br />
+                    <span className="muted">{student.assigned_staff_email || '-'}</span>
+                  </td>
                   <td><ScorePill score={student.score} /></td>
                 </tr>
               ))}
               {!students?.length ? (
-                <tr><td colSpan={5}>No student records yet. Create the first student intake.</td></tr>
+                <tr><td colSpan={6}>No student records yet. Create the first student intake.</td></tr>
               ) : null}
             </tbody>
           </table>

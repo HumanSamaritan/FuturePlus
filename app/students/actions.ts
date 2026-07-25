@@ -71,6 +71,19 @@ export async function createStudentAction(formData: FormData) {
     throw new Error('You must be logged in with a Google account.');
   }
 
+  const { data: staffProfile } = await supabase
+    .from('profiles')
+    .select('full_name,email')
+    .eq('id', user.id)
+    .maybeSingle();
+  const assignedStaffEmail = staffProfile?.email || user.email || '';
+  const assignedStaffName =
+    staffProfile?.full_name ||
+    user.user_metadata?.full_name ||
+    user.user_metadata?.name ||
+    assignedStaffEmail.split('@')[0] ||
+    'Future Plus Staff';
+
   const parsed = StudentSchema.parse({
     firstName: formData.get('firstName'),
     lastName: formData.get('lastName'),
@@ -123,6 +136,8 @@ export async function createStudentAction(formData: FormData) {
     .from('students')
     .insert({
       created_by: user.id,
+      assigned_staff_name: assignedStaffName,
+      assigned_staff_email: assignedStaffEmail,
       first_name: student.firstName,
       last_name: student.lastName,
       email: student.email || null,

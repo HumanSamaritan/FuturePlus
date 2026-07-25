@@ -33,6 +33,10 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
           <span className="badge">Status: {student.status}</span>
           {student.future_plus_id ? <span className="badge">{student.future_plus_id}</span> : null}
         </div>
+        <p className="lead-owner">
+          <strong>Managing staff:</strong> {student.assigned_staff_name || 'Not assigned'}
+          <span>{student.assigned_staff_email || 'No staff email recorded'}</span>
+        </p>
       </div>
 
       <div className="grid grid-2">

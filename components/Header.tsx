@@ -13,6 +13,22 @@ export default async function Header() {
     data: { user }
   } = await supabase.auth.getUser();
   const isStaff = pathname !== '/' && Boolean(user && isAllowedUserEmail(user.email));
+  let staffName = '';
+  let staffEmail = '';
+  if (isStaff && user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name,email')
+      .eq('id', user.id)
+      .maybeSingle();
+    staffEmail = profile?.email || user.email || '';
+    staffName =
+      profile?.full_name ||
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      staffEmail.split('@')[0] ||
+      'Future Plus Staff';
+  }
 
   return (
     <header className={`site-header ${isStaff ? 'workspace-nav' : 'public-nav'}`}>
@@ -51,6 +67,12 @@ export default async function Header() {
           </>
         )}
       </nav>
+      {isStaff ? (
+        <div className="staff-identity" aria-label="Signed-in staff member">
+          <span className="staff-avatar">{staffName.slice(0, 1).toUpperCase()}</span>
+          <span><strong>{staffName}</strong><small>{staffEmail}</small></span>
+        </div>
+      ) : null}
     </header>
   );
 }

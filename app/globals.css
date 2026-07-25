@@ -81,6 +81,37 @@ main {
 .workspace-nav .logout-link { margin-top: 24px; color: var(--danger); }
 .workspace-nav + main { width: auto; margin-left: 250px; padding: 32px; max-width: 1500px; }
 .workspace-nav + main h1 { font-size: clamp(2rem, 4vw, 3.35rem); }
+.staff-identity {
+  position: fixed;
+  top: 16px;
+  right: 22px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 290px;
+  padding: 9px 13px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 10px 28px rgba(18, 33, 61, .1);
+}
+.staff-identity > span:last-child { display: grid; min-width: 0; }
+.staff-identity strong, .staff-identity small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.staff-identity small { color: var(--muted); font-size: .72rem; }
+.staff-avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 50%;
+  color: white;
+  background: var(--primary-2);
+  font-weight: 850;
+}
+.lead-owner { display: flex; gap: 8px 14px; flex-wrap: wrap; align-items: baseline; margin-top: 18px; }
+.lead-owner span { color: var(--muted); }
 .nav-login { color: white; background: var(--primary); padding: 9px 14px; border-radius: 10px; }
 
 .brand {
@@ -165,6 +196,7 @@ nav a:hover {
 .file-button { display: inline-flex; align-items: center; }
 .file-button input { display: none; }
 .import-message { color: var(--primary-2); font-weight: 700; }
+.success-message { color: var(--success); background: #eaf7ef; border: 1px solid #bfe3ce; border-radius: 12px; padding: 10px 12px; font-weight: 750; }
 .college-database { padding: 14px; }
 .college-database table { font-size: .78rem; }
 .college-database th, .college-database td { padding: 8px 7px; }
@@ -477,5 +509,6 @@ pre {
   .workspace-nav { position: static; width: auto; }
   .workspace-nav nav { display: flex; }
   .workspace-nav + main { margin-left: 0; padding: 20px 16px 48px; }
+  .staff-identity { position: static; max-width: 100%; }
   .inline-edit-form { position: fixed; inset: 12px; width: auto; overflow-y: auto; grid-template-columns: 1fr; }
 }

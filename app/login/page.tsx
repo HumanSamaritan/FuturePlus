@@ -30,7 +30,7 @@ async function LoginPageContent({ searchParams }: { searchParams?: Promise<{ err
       <div className="hero-card">
         <h2>Sign in</h2>
         {params?.error ? <p className="alert">{params.error}</p> : null}
-        <p className="muted">Continue with Google to open the Future Plus dashboard.</p>
+        <p className="muted">Continue with your approved Google account. Your staff name and email will be recorded against every student lead you create or manage.</p>
         <LoginButton />
         {user ? <p className="help-text">Signed in with {user.email}. You can choose another account above or <a href="/logout"><u>sign out</u></a>.</p> : null}
       </div>
