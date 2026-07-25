@@ -1,0 +1,138 @@
+import SubmitButton from '@/components/SubmitButton';
+import { DEFAULT_SUBJECT_AREAS, INDIA_STATES_AND_REGIONS, SUPPORT_OPTIONS } from '@/lib/constants';
+import { getSubjectAreas } from '@/lib/data';
+import { createStudentAction } from '../actions';
+
+export default async function NewStudentPage() {
+  let subjectAreas = DEFAULT_SUBJECT_AREAS;
+  try {
+    const dbSubjects = await getSubjectAreas();
+    subjectAreas = [...new Set([...DEFAULT_SUBJECT_AREAS, ...dbSubjects])].sort();
+  } catch {
+    subjectAreas = DEFAULT_SUBJECT_AREAS;
+  }
+
+  return (
+    <section className="form-card">
+      <span className="kicker">Student Intake</span>
+      <h1>Undergraduate counselling form</h1>
+      <p className="muted">
+        Capture the student requirement once. The system will store the record in Supabase and generate a first-pass recommendation score.
+      </p>
+
+      <form action={createStudentAction}>
+        <div className="form-section">
+          <h2>1. Student basics</h2>
+          <div className="grid grid-2">
+            <div className="field">
+              <label htmlFor="firstName">First name *</label>
+              <input id="firstName" name="firstName" required />
+            </div>
+            <div className="field">
+              <label htmlFor="lastName">Last name *</label>
+              <input id="lastName" name="lastName" required />
+            </div>
+            <div className="field">
+              <label htmlFor="email">Email</label>
+              <input id="email" name="email" type="email" />
+            </div>
+            <div className="field">
+              <label htmlFor="phone">Phone</label>
+              <input id="phone" name="phone" />
+            </div>
+            <div className="field">
+              <label htmlFor="grade">Current grade / class</label>
+              <input id="grade" name="grade" placeholder="e.g. Class 12" />
+            </div>
+            <div className="field">
+              <label htmlFor="board">Board / curriculum</label>
+              <input id="board" name="board" placeholder="CBSE, ISC, IB, State Board" />
+            </div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h2>2. Academic and admission preference</h2>
+          <div className="grid grid-2">
+            <div className="field">
+              <label htmlFor="subjectsInterest">Subjects / course interests *</label>
+              <select id="subjectsInterest" name="subjectsInterest" multiple required>
+                {subjectAreas.map((subject) => <option key={subject} value={subject}>{subject}</option>)}
+              </select>
+              <span className="help-text">Hold Ctrl/Cmd to select multiple subjects. This list is merged from default options and database course subjects.</span>
+            </div>
+            <div className="field">
+              <label htmlFor="preferredLocations">Preferred locations</label>
+              <select id="preferredLocations" name="preferredLocations" multiple>
+                {INDIA_STATES_AND_REGIONS.map((location) => <option key={location} value={location}>{location}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="targetIntake">Target intake</label>
+              <input id="targetIntake" name="targetIntake" placeholder="e.g. 2026 July / 2027 January" />
+            </div>
+            <div className="field">
+              <label htmlFor="country">Country focus</label>
+              <input id="country" name="country" defaultValue="India" />
+            </div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h2>3. Commercial and support requirements</h2>
+          <div className="grid grid-3">
+            <div className="field">
+              <label htmlFor="budgetMin">Minimum fee budget, INR</label>
+              <input id="budgetMin" name="budgetMin" type="number" min="0" step="1000" />
+            </div>
+            <div className="field">
+              <label htmlFor="budgetMax">Maximum fee budget, INR</label>
+              <input id="budgetMax" name="budgetMax" type="number" min="0" step="1000" />
+            </div>
+            <div className="field">
+              <label htmlFor="salaryExpectation">Expected package, INR</label>
+              <input id="salaryExpectation" name="salaryExpectation" type="number" min="0" step="1000" />
+            </div>
+          </div>
+          <div className="field">
+            <label><input type="checkbox" name="hostelRequired" /> Hostel facility required</label>
+          </div>
+          <div className="field">
+            <label htmlFor="supportRequired">Future Plus support required</label>
+            <select id="supportRequired" name="supportRequired" multiple>
+              {SUPPORT_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h2>4. Passion, purpose and counselling notes</h2>
+          <div className="grid grid-2">
+            <div className="field">
+              <label htmlFor="passion">Student passion</label>
+              <textarea id="passion" name="passion" placeholder="What topics, problems or activities energise the student?" />
+            </div>
+            <div className="field">
+              <label htmlFor="purpose">Student purpose</label>
+              <textarea id="purpose" name="purpose" placeholder="What impact or future direction does the student want to create?" />
+            </div>
+            <div className="field">
+              <label htmlFor="strengths">Strengths</label>
+              <textarea id="strengths" name="strengths" />
+            </div>
+            <div className="field">
+              <label htmlFor="constraints">Constraints</label>
+              <textarea id="constraints" name="constraints" placeholder="Budget, location, marks, family, travel or other constraints" />
+            </div>
+          </div>
+          <div className="field">
+            <label htmlFor="notes">Internal staff notes</label>
+            <textarea id="notes" name="notes" />
+          </div>
+        </div>
+
+        <SubmitButton>Save Student and Generate Recommendations</SubmitButton>
+      </form>
+    </section>
+  );
+}
