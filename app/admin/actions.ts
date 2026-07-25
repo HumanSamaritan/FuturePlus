@@ -14,6 +14,8 @@ const CollegeCourseSchema = z.object({
   commissionBased: z.coerce.boolean().default(false),
   hostelAvailable: z.coerce.boolean().default(false),
   sourceUrl: z.string().url().optional().or(z.literal('')),
+  pocName: z.string().optional(),
+  pocEmail: z.string().email().optional().or(z.literal('')),
   courseName: z.string().min(1),
   subjectArea: z.string().min(1),
   duration: z.string().optional(),
@@ -45,6 +47,8 @@ export async function addCollegeCourseAction(formData: FormData) {
     commissionBased: formData.get('commissionBased') === 'on',
     hostelAvailable: formData.get('hostelAvailable') === 'on',
     sourceUrl: formData.get('sourceUrl') || undefined,
+    pocName: formData.get('pocName') || undefined,
+    pocEmail: formData.get('pocEmail') || undefined,
     courseName: formData.get('courseName'),
     subjectArea: formData.get('subjectArea'),
     duration: formData.get('duration') || undefined,
@@ -66,7 +70,10 @@ export async function addCollegeCourseAction(formData: FormData) {
         partner_status: parsed.partnerStatus,
         commission_based: parsed.commissionBased,
         hostel_available: parsed.hostelAvailable,
-        source_url: parsed.sourceUrl || null
+        source_url: parsed.sourceUrl || null,
+        poc_name: parsed.pocName || null,
+        poc_email: parsed.pocEmail || null,
+        last_reviewed_at: new Date().toISOString()
       },
       { onConflict: 'name,city,state' }
     )
@@ -91,4 +98,69 @@ export async function addCollegeCourseAction(formData: FormData) {
 
   revalidatePath('/colleges');
   revalidatePath('/admin');
+}
+
+const ImportRowSchema = z.object({
+  college_name: z.string().min(1),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  country: z.string().default('India'),
+  poc_name: z.string().optional(),
+  poc_email: z.string().email().optional().or(z.literal('')),
+  partner_status: z.enum(['preferred_partner', 'pipeline_partner', 'non_partner']).default('non_partner'),
+  commission_based: z.union([z.boolean(), z.string()]).optional(),
+  hostel_available: z.union([z.boolean(), z.string()]).optional(),
+  source_url: z.string().url().optional().or(z.literal('')),
+  course_name: z.string().min(1),
+  subject_area: z.string().min(1),
+  duration: z.string().optional(),
+  total_fee: z.union([z.number(), z.string()]).optional(),
+  placement_count: z.union([z.number(), z.string()]).optional(),
+  highest_package: z.union([z.number(), z.string()]).optional(),
+  average_package: z.union([z.number(), z.string()]).optional(),
+  currency: z.string().default('INR')
+});
+
+const truthy = (value: unknown) => ['true', 'yes', '1', 'y'].includes(String(value).toLowerCase());
+const nullableNumber = (value: unknown) => value === '' || value == null ? null : Number(value);
+
+export async function importCollegeRowsAction(rows: unknown[]) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || !isAllowedUserEmail(user.email)) throw new Error('Approved staff access is required.');
+
+  const parsedRows = z.array(ImportRowSchema).max(1000).parse(rows);
+  for (const row of parsedRows) {
+    const { data: college, error: collegeError } = await supabase.from('colleges').upsert({
+      name: row.college_name,
+      city: row.city || null,
+      state: row.state || null,
+      country: row.country || 'India',
+      poc_name: row.poc_name || null,
+      poc_email: row.poc_email || null,
+      partner_status: row.partner_status || 'non_partner',
+      commission_based: truthy(row.commission_based),
+      hostel_available: truthy(row.hostel_available),
+      source_url: row.source_url || null,
+      last_reviewed_at: new Date().toISOString()
+    }, { onConflict: 'name,city,state' }).select('id').single();
+    if (collegeError) throw new Error(`${row.college_name}: ${collegeError.message}`);
+
+    const { error: courseError } = await supabase.from('courses').upsert({
+      college_id: college.id,
+      course_name: row.course_name,
+      subject_area: row.subject_area,
+      duration: row.duration || null,
+      total_fee: nullableNumber(row.total_fee),
+      placement_count: nullableNumber(row.placement_count),
+      highest_package: nullableNumber(row.highest_package),
+      average_package: nullableNumber(row.average_package),
+      currency: row.currency || 'INR'
+    }, { onConflict: 'college_id,course_name' });
+    if (courseError) throw new Error(`${row.college_name} / ${row.course_name}: ${courseError.message}`);
+  }
+  revalidatePath('/colleges');
+  revalidatePath('/admin');
+  revalidatePath('/dashboard');
+  return { imported: parsedRows.length };
 }

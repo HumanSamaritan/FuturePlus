@@ -20,11 +20,11 @@ async function LoginPageContent({ searchParams }: { searchParams?: Promise<{ err
   return (
     <section className="hero">
       <div>
-        <span className="kicker">Secure Google Login</span>
-        <h1>Welcome to Future Plus.</h1>
+        <span className="kicker">Private staff workspace</span>
+        <h1>Welcome back, Future Plus team.</h1>
         <p className="muted">
-          During development and testing, any Google account may sign in. Student records and
-          recommendations remain protected by Supabase authentication and row-level security.
+          This area contains student and institutional information. Access is limited to
+          approved Future Plus employee email addresses.
         </p>
       </div>
       <div className="hero-card">

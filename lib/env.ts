@@ -13,5 +13,10 @@ export function getSupabaseConfig() {
 // through Supabase may use the application. Replace this with an explicit
 // approval check before moving to a production staff rollout.
 export function isAllowedUserEmail(email?: string | null) {
-  return Boolean(email);
+  if (!email) return false;
+  const allowList = (process.env.FUTURE_PLUS_STAFF_EMAILS || '')
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+  return allowList.includes(email.toLowerCase());
 }

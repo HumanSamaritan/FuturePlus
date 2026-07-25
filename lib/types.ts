@@ -19,6 +19,9 @@ export type CourseWithCollege = {
   partner_status: PartnerStatus | string | null;
   commission_based: boolean | null;
   source_url: string | null;
+  poc_name: string | null;
+  poc_email: string | null;
+  next_review_at: string | null;
 };
 
 export type StudentInput = {
@@ -45,6 +48,19 @@ export type StudentInput = {
   constraints?: string;
   supportRequired: string[];
   notes?: string;
+  linkedinUrl?: string;
+  facebookUrl?: string;
+  instagramUrl?: string;
+  xUrl?: string;
+  accolades?: string;
+  extracurricularActivities?: string;
+  rewards?: string;
+  specialSkills?: string;
+  certifications?: string;
+  portfolioUrl?: string;
+  languages?: string;
+  workExperience?: string;
+  careerGoals?: string;
 };
 
 export type RecommendationResult = {

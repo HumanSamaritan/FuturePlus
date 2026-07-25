@@ -24,10 +24,10 @@ export default async function DashboardPage() {
   return (
     <section className="grid">
       <div className="card">
-        <span className="kicker">Staff Dashboard</span>
-        <h1>Student counselling pipeline</h1>
+        <span className="kicker">Future Plus organiser workspace</span>
+        <h1>Good to see you. Here’s your counselling pipeline.</h1>
         <p className="muted">
-          Capture new students, shortlist colleges and track onboarding for Future Plus undergraduate programmes.
+          Manage student profiles, institutional relationships, recommendations and annual data reviews from one place.
         </p>
         <div className="actions">
           <Link href="/students/new" className="primary-button">Create Student Intake</Link>

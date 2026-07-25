@@ -32,7 +32,20 @@ const StudentSchema = z.object({
   strengths: z.string().optional(),
   constraints: z.string().optional(),
   supportRequired: z.array(z.string()).default([]),
-  notes: z.string().optional()
+  notes: z.string().optional(),
+  linkedinUrl: z.string().url().optional().or(z.literal('')),
+  facebookUrl: z.string().url().optional().or(z.literal('')),
+  instagramUrl: z.string().url().optional().or(z.literal('')),
+  xUrl: z.string().url().optional().or(z.literal('')),
+  portfolioUrl: z.string().url().optional().or(z.literal('')),
+  accolades: z.string().optional(),
+  extracurricularActivities: z.string().optional(),
+  rewards: z.string().optional(),
+  specialSkills: z.string().optional(),
+  certifications: z.string().optional(),
+  languages: z.string().optional(),
+  workExperience: z.string().optional(),
+  careerGoals: z.string().optional()
 });
 
 function getMulti(formData: FormData, key: string) {
@@ -77,7 +90,20 @@ export async function createStudentAction(formData: FormData) {
     strengths: formData.get('strengths') || undefined,
     constraints: formData.get('constraints') || undefined,
     supportRequired: getMulti(formData, 'supportRequired'),
-    notes: formData.get('notes') || undefined
+    notes: formData.get('notes') || undefined,
+    linkedinUrl: formData.get('linkedinUrl') || undefined,
+    facebookUrl: formData.get('facebookUrl') || undefined,
+    instagramUrl: formData.get('instagramUrl') || undefined,
+    xUrl: formData.get('xUrl') || undefined,
+    portfolioUrl: formData.get('portfolioUrl') || undefined,
+    accolades: formData.get('accolades') || undefined,
+    extracurricularActivities: formData.get('extracurricularActivities') || undefined,
+    rewards: formData.get('rewards') || undefined,
+    specialSkills: formData.get('specialSkills') || undefined,
+    certifications: formData.get('certifications') || undefined,
+    languages: formData.get('languages') || undefined,
+    workExperience: formData.get('workExperience') || undefined,
+    careerGoals: formData.get('careerGoals') || undefined
   });
 
   const student: StudentInput = {
@@ -113,7 +139,20 @@ export async function createStudentAction(formData: FormData) {
       strengths: student.strengths || null,
       constraints: student.constraints || null,
       support_required: student.supportRequired,
-      notes: student.notes || null
+      notes: student.notes || null,
+      linkedin_url: student.linkedinUrl || null,
+      facebook_url: student.facebookUrl || null,
+      instagram_url: student.instagramUrl || null,
+      x_url: student.xUrl || null,
+      portfolio_url: student.portfolioUrl || null,
+      accolades: student.accolades || null,
+      extracurricular_activities: student.extracurricularActivities || null,
+      rewards: student.rewards || null,
+      special_skills: student.specialSkills || null,
+      certifications: student.certifications || null,
+      languages: student.languages || null,
+      work_experience: student.workExperience || null,
+      career_goals: student.careerGoals || null
     })
     .select('*')
     .single();

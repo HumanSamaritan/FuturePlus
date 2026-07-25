@@ -28,6 +28,7 @@ export default async function CollegesPage() {
                 <th>Duration</th>
                 <th>Total Fee</th>
                 <th>Location</th>
+                <th>POC / annual review</th>
                 <th>Placement Count</th>
                 <th>Placement Package</th>
                 <th>Hostel</th>
@@ -42,6 +43,7 @@ export default async function CollegesPage() {
                   <td>{course.duration || '-'}</td>
                   <td>{course.total_fee ? `${course.total_fee.toLocaleString('en-IN')} ${course.currency || 'INR'}` : 'Verify'}</td>
                   <td>{[course.city, course.state, course.country].filter(Boolean).join(', ')}</td>
+                  <td>{course.poc_name || 'Not captured'}<br /><span className="muted">{course.poc_email || 'No POC email'}<br />Review: {course.next_review_at ? new Date(course.next_review_at).toLocaleDateString('en-IN') : 'Not scheduled'}</span></td>
                   <td>{course.placement_count ?? 'Verify'}</td>
                   <td>
                     Avg: {course.average_package ? course.average_package.toLocaleString('en-IN') : 'Verify'}<br />
@@ -54,7 +56,7 @@ export default async function CollegesPage() {
                   </td>
                 </tr>
               ))}
-              {!courses.length ? <tr><td colSpan={9}>No college records yet. Add seed data in Supabase or use the Admin page.</td></tr> : null}
+              {!courses.length ? <tr><td colSpan={10}>No college records yet. Add seed data in Supabase or use the Admin page.</td></tr> : null}
             </tbody>
           </table>
         </div>

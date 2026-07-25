@@ -25,6 +25,8 @@ body {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+html { scroll-behavior: smooth; }
+
 a {
   color: inherit;
   text-decoration: none;
@@ -49,6 +51,37 @@ main {
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--line);
 }
+
+.workspace-nav {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 250px;
+  align-items: stretch;
+  justify-content: flex-start;
+  flex-direction: column;
+  padding: 22px 16px;
+  background: #fff;
+  border-right: 1px solid var(--line);
+  border-bottom: 0;
+}
+
+.workspace-nav nav {
+  display: grid;
+  gap: 7px;
+  margin-top: 24px;
+}
+
+.workspace-nav nav a {
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-weight: 650;
+}
+
+.workspace-nav nav a:hover { background: #f1f4ff; color: #4f46e5; }
+.workspace-nav .logout-link { margin-top: 24px; color: var(--danger); }
+.workspace-nav + main { width: auto; margin-left: 250px; padding: 32px; max-width: 1500px; }
+.workspace-nav + main h1 { font-size: clamp(2rem, 4vw, 3.35rem); }
+.nav-login { color: white; background: var(--primary); padding: 9px 14px; border-radius: 10px; }
 
 .brand {
   display: flex;
@@ -94,6 +127,44 @@ nav a:hover {
   align-items: center;
   min-height: calc(100vh - 130px);
 }
+
+.public-nav + main { width: 100%; max-width: none; padding: 0; }
+.public-hero {
+  min-height: calc(100vh - 86px);
+  padding: clamp(44px, 7vw, 100px) max(24px, calc((100vw - 1180px) / 2));
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  align-items: center;
+  gap: clamp(28px, 5vw, 72px);
+  background: linear-gradient(125deg, #f1f4ff 0%, #fff 52%, #fff7e5 100%);
+}
+.public-hero-copy p { max-width: 670px; font-size: 1.13rem; color: var(--muted); }
+.public-hero-image { position: relative; min-height: 520px; }
+.public-hero-image img { width: 100%; height: 520px; object-fit: cover; border-radius: 32px 32px 110px 32px; box-shadow: var(--shadow); }
+.floating-proof { position: absolute; left: -24px; bottom: 32px; background: #fff; padding: 16px 22px; border-radius: 16px; box-shadow: var(--shadow); font-weight: 800; color: var(--primary-2); }
+.trust-row { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 34px; color: var(--muted); }
+.trust-row span { display: grid; font-size: .86rem; }
+.trust-row strong { color: var(--text); font-size: 1.25rem; }
+.public-section { padding: clamp(58px, 8vw, 105px) max(24px, calc((100vw - 1180px) / 2)); }
+.public-section h2 { font-size: clamp(2rem, 4vw, 3.6rem); max-width: 800px; }
+.split-section { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+.split-section p { color: var(--muted); font-size: 1.1rem; }
+.section-heading { margin-bottom: 34px; }
+.programme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.programme-card { padding: 24px; border-radius: 20px; background: #fff; border: 1px solid var(--line); box-shadow: 0 10px 32px rgba(18,33,61,.06); }
+.programme-card > span { color: var(--accent); font-weight: 900; }
+.programme-card h3 { margin-top: 28px; font-size: 1.3rem; }
+.programme-card p { color: var(--muted); }
+.dark-section { background: #101b34; color: #fff; }
+.dark-section .kicker { color: #fbbf24; }
+.city-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 34px; }
+.city-row span { border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); padding: 12px 18px; border-radius: 999px; }
+.public-cta { display: flex; justify-content: space-between; gap: 40px; align-items: center; background: #fff7e5; }
+.public-cta h2 { margin-bottom: 8px; }
+.import-panel { margin: 22px 0; padding: 20px; border: 1px dashed #a8b3cc; border-radius: 18px; background: #f8faff; }
+.file-button { display: inline-flex; align-items: center; }
+.file-button input { display: none; }
+.import-message { color: var(--primary-2); font-weight: 700; }
 
 .hero-card,
 .card,
@@ -378,4 +449,11 @@ pre {
     align-items: flex-start;
     flex-direction: column;
   }
+
+  .public-hero, .split-section, .programme-grid { grid-template-columns: 1fr; }
+  .public-hero-image, .public-hero-image img { min-height: 360px; height: 360px; }
+  .public-cta { align-items: flex-start; flex-direction: column; }
+  .workspace-nav { position: static; width: auto; }
+  .workspace-nav nav { display: flex; }
+  .workspace-nav + main { margin-left: 0; padding: 20px 16px 48px; }
 }

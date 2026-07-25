@@ -106,7 +106,25 @@ export default async function NewStudentPage() {
         </div>
 
         <div className="form-section">
-          <h2>4. Passion, purpose and counselling notes</h2>
+          <h2>4. Student profile, achievements and digital presence</h2>
+          <div className="grid grid-2">
+            <div className="field"><label htmlFor="linkedinUrl">LinkedIn profile</label><input id="linkedinUrl" name="linkedinUrl" type="url" placeholder="https://linkedin.com/in/..." /></div>
+            <div className="field"><label htmlFor="portfolioUrl">Portfolio / GitHub / personal site</label><input id="portfolioUrl" name="portfolioUrl" type="url" placeholder="https://..." /></div>
+            <div className="field"><label htmlFor="facebookUrl">Facebook</label><input id="facebookUrl" name="facebookUrl" type="url" /></div>
+            <div className="field"><label htmlFor="instagramUrl">Instagram</label><input id="instagramUrl" name="instagramUrl" type="url" /></div>
+            <div className="field"><label htmlFor="xUrl">X profile</label><input id="xUrl" name="xUrl" type="url" /></div>
+            <div className="field"><label htmlFor="languages">Languages</label><input id="languages" name="languages" placeholder="Odia, Hindi, English" /></div>
+            <div className="field"><label htmlFor="accolades">Accolades and distinctions</label><textarea id="accolades" name="accolades" /></div>
+            <div className="field"><label htmlFor="extracurricularActivities">Extracurricular activities</label><textarea id="extracurricularActivities" name="extracurricularActivities" /></div>
+            <div className="field"><label htmlFor="rewards">Awards and rewards</label><textarea id="rewards" name="rewards" /></div>
+            <div className="field"><label htmlFor="specialSkills">Special skills</label><textarea id="specialSkills" name="specialSkills" placeholder="Technical, creative, leadership and domain skills" /></div>
+            <div className="field"><label htmlFor="certifications">Certifications</label><textarea id="certifications" name="certifications" /></div>
+            <div className="field"><label htmlFor="workExperience">Projects, internships or work experience</label><textarea id="workExperience" name="workExperience" /></div>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h2>5. Passion, purpose and counselling notes</h2>
           <div className="grid grid-2">
             <div className="field">
               <label htmlFor="passion">Student passion</label>
@@ -124,6 +142,7 @@ export default async function NewStudentPage() {
               <label htmlFor="constraints">Constraints</label>
               <textarea id="constraints" name="constraints" placeholder="Budget, location, marks, family, travel or other constraints" />
             </div>
+            <div className="field"><label htmlFor="careerGoals">Career goals</label><textarea id="careerGoals" name="careerGoals" placeholder="Roles, industries or problems the student wants to pursue" /></div>
           </div>
           <div className="field">
             <label htmlFor="notes">Internal staff notes</label>

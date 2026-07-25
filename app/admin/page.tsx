@@ -1,15 +1,18 @@
 import SubmitButton from '@/components/SubmitButton';
 import { DEFAULT_SUBJECT_AREAS, INDIA_STATES_AND_REGIONS } from '@/lib/constants';
 import { addCollegeCourseAction } from './actions';
+import CollegeImport from '@/components/CollegeImport';
 
 export default function AdminPage() {
   return (
-    <section className="form-card">
+    <section className="grid">
+      <div className="form-card">
       <span className="kicker">Admin Data Entry</span>
       <h1>Add college and course data</h1>
       <p className="muted">
-        Use this page for the initial MVP. Later, replace manual entry with a bulk CSV upload and verified university data ingestion.
+        Add or update one institution manually, or use the bulk spreadsheet workflow below.
       </p>
+      <CollegeImport />
 
       <form action={addCollegeCourseAction}>
         <div className="form-section">
@@ -48,6 +51,8 @@ export default function AdminPage() {
               <label htmlFor="sourceUrl">Source URL / verification link</label>
               <input id="sourceUrl" name="sourceUrl" type="url" placeholder="https://..." />
             </div>
+            <div className="field"><label htmlFor="pocName">College POC name</label><input id="pocName" name="pocName" /></div>
+            <div className="field"><label htmlFor="pocEmail">College POC email</label><input id="pocEmail" name="pocEmail" type="email" /></div>
           </div>
           <div className="grid grid-2">
             <label><input type="checkbox" name="commissionBased" /> Commission based arrangement</label>
@@ -97,6 +102,7 @@ export default function AdminPage() {
 
         <SubmitButton>Add College Course</SubmitButton>
       </form>
+      </div>
     </section>
   );
 }
