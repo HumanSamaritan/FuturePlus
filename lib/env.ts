@@ -9,11 +9,9 @@ export function getSupabaseConfig() {
   return { url, publishableKey };
 }
 
-export function getAllowedStaffDomain() {
-  return (process.env.ALLOWED_STAFF_DOMAIN || 'omnexagoc.com').toLowerCase();
-}
-
-export function isAllowedStaffEmail(email?: string | null) {
-  if (!email) return false;
-  return email.toLowerCase().endsWith(`@${getAllowedStaffDomain()}`);
+// Development/testing access: any user successfully authenticated by Google
+// through Supabase may use the application. Replace this with an explicit
+// approval check before moving to a production staff rollout.
+export function isAllowedUserEmail(email?: string | null) {
+  return Boolean(email);
 }

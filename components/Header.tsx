@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function Header() {
@@ -10,7 +11,14 @@ export default async function Header() {
   return (
     <header className="site-header">
       <Link href="/dashboard" className="brand">
-        <span className="brand-mark">FP</span>
+        <Image
+          src="/future-plus-logo.jpg"
+          alt="Future Plus Education"
+          className="brand-logo"
+          width={64}
+          height={64}
+          priority
+        />
         <span>
           <strong>Future Plus</strong>
           <small>Admissions Counselling MVP</small>

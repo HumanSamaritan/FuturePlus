@@ -4,7 +4,12 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Future Plus Counselling MVP',
-  description: 'Student admissions counselling and college recommendation MVP for Future Plus.'
+  description: 'Student admissions counselling and college recommendation MVP for Future Plus.',
+  icons: {
+    icon: '/future-plus-logo.jpg',
+    shortcut: '/future-plus-logo.jpg',
+    apple: '/future-plus-logo.jpg'
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

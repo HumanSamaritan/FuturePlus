@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { isAllowedStaffEmail } from '@/lib/env';
+import { isAllowedUserEmail } from '@/lib/env';
 import { createClient } from '@/lib/supabase/server';
 
 const CollegeCourseSchema = z.object({
@@ -34,7 +34,7 @@ export async function addCollegeCourseAction(formData: FormData) {
     data: { user }
   } = await supabase.auth.getUser();
 
-  if (!user || !isAllowedStaffEmail(user.email)) throw new Error('Staff access required.');
+  if (!user || !isAllowedUserEmail(user.email)) throw new Error('Google sign-in is required.');
 
   const parsed = CollegeCourseSchema.parse({
     collegeName: formData.get('collegeName'),

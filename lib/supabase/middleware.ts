@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { getAllowedStaffDomain, getSupabaseConfig, isAllowedStaffEmail } from '@/lib/env';
+import { getSupabaseConfig, isAllowedUserEmail } from '@/lib/env';
 
 const protectedPrefixes = ['/dashboard', '/students', '/colleges', '/admin'];
 
@@ -35,10 +35,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (!isAllowedStaffEmail(user.email)) {
+  if (!isAllowedUserEmail(user.email)) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    url.searchParams.set('error', `Only @${getAllowedStaffDomain()} staff accounts can access this MVP.`);
+    url.searchParams.set('error', 'Your Google account did not provide an email address.');
     return NextResponse.redirect(url);
   }
 

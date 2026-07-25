@@ -26,7 +26,7 @@ export default async function HomePage() {
       <div className="hero-card">
         <h2>MVP workflow</h2>
         <div className="timeline">
-          <div className="timeline-item"><strong>1. Staff login</strong><br /><span className="muted">Google OAuth restricted to the approved company domain.</span></div>
+          <div className="timeline-item"><strong>1. Google login</strong><br /><span className="muted">Any authenticated Google account may access the development and testing version.</span></div>
           <div className="timeline-item"><strong>2. Student intake</strong><br /><span className="muted">Capture UG interest, budget, salary expectation, hostel need, passion and purpose.</span></div>
           <div className="timeline-item"><strong>3. College fit score</strong><br /><span className="muted">Score courses using transparent rule-based logic, with partner preference and hidden staff notes.</span></div>
           <div className="timeline-item"><strong>4. Future Plus ID</strong><br /><span className="muted">Generated when a student is moved to admitted/onboarded status.</span></div>

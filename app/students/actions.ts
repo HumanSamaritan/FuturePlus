@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { generateCounsellingSummary } from '@/lib/ai';
 import { getCourseCatalog } from '@/lib/data';
-import { isAllowedStaffEmail } from '@/lib/env';
+import { isAllowedUserEmail } from '@/lib/env';
 import { generateRecommendations } from '@/lib/recommendation';
 import { createClient } from '@/lib/supabase/server';
 import { StudentInput } from '@/lib/types';
@@ -51,8 +51,8 @@ export async function createStudentAction(formData: FormData) {
     error: userError
   } = await supabase.auth.getUser();
 
-  if (userError || !user || !isAllowedStaffEmail(user.email)) {
-    throw new Error('You must be logged in with an approved staff account.');
+  if (userError || !user || !isAllowedUserEmail(user.email)) {
+    throw new Error('You must be logged in with a Google account.');
   }
 
   const parsed = StudentSchema.parse({

@@ -1,12 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function LoginButton() {
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
   async function signIn() {
+    setLoading(true);
+    setErrorMessage('');
     const supabase = createClient();
     const redirectTo = `${window.location.origin}/auth/callback`;
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo,
@@ -16,11 +22,19 @@ export default function LoginButton() {
         }
       }
     });
+
+    if (error) {
+      setErrorMessage(error.message);
+      setLoading(false);
+    }
   }
 
   return (
-    <button className="primary-button" type="button" onClick={signIn}>
-      Continue with Google
-    </button>
+    <>
+      {errorMessage ? <p className="alert">{errorMessage}</p> : null}
+      <button className="primary-button" type="button" onClick={signIn} disabled={loading}>
+        {loading ? 'Opening Google…' : 'Continue with Google'}
+      </button>
+    </>
   );
 }

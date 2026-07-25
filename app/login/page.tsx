@@ -1,5 +1,6 @@
 import LoginButton from './signin-button';
-import { getAllowedStaffDomain } from '@/lib/env';
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
 
 export default function LoginPage({ searchParams }: { searchParams?: Promise<{ error?: string }> }) {
   return <LoginPageContent searchParams={searchParams} />;
@@ -7,22 +8,29 @@ export default function LoginPage({ searchParams }: { searchParams?: Promise<{ e
 
 async function LoginPageContent({ searchParams }: { searchParams?: Promise<{ error?: string }> }) {
   const params = searchParams ? await searchParams : {};
-  const domain = getAllowedStaffDomain();
+  const supabase = await createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (user && !params?.error) {
+    redirect('/dashboard');
+  }
 
   return (
     <section className="hero">
       <div>
-        <span className="kicker">Secure Staff Login</span>
-        <h1>Login with your Future Plus / OMNeXa staff account.</h1>
+        <span className="kicker">Secure Google Login</span>
+        <h1>Welcome to Future Plus.</h1>
         <p className="muted">
-          This MVP is restricted to approved staff using the <strong>@{domain}</strong> email domain.
-          Student records and recommendations are stored in Supabase with row-level security.
+          During development and testing, any Google account may sign in. Student records and
+          recommendations remain protected by Supabase authentication and row-level security.
         </p>
       </div>
       <div className="hero-card">
-        <h2>Staff access</h2>
+        <h2>Sign in</h2>
         {params?.error ? <p className="alert">{params.error}</p> : null}
-        <p className="muted">Use Google Sign-In. After login, you will be redirected to the dashboard.</p>
+        <p className="muted">Continue with Google to open the Future Plus dashboard.</p>
         <LoginButton />
       </div>
     </section>

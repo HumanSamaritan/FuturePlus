@@ -23,7 +23,9 @@ returns boolean
 language sql
 stable
 as $$
-  select lower(coalesce(auth.jwt() ->> 'email', '')) like '%@omnexagoc.com';
+  -- Development/testing mode: any authenticated Supabase user may proceed.
+  -- Replace with an explicit profile approval check before production rollout.
+  select auth.uid() is not null;
 $$;
 
 create table if not exists public.profiles (
@@ -151,7 +153,7 @@ begin
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name'),
-    lower(coalesce(new.email, '')) like '%@omnexagoc.com'
+    true
   )
   on conflict (id) do update set
     email = excluded.email,
@@ -216,7 +218,8 @@ alter table public.colleges enable row level security;
 alter table public.courses enable row level security;
 alter table public.recommendations enable row level security;
 
--- Staff policies. For production, replace domain-only approval with explicit profile.allowed + admin workflow.
+-- Authenticated-user policies for development/testing.
+-- For production, replace this with explicit profile.allowed + admin workflow.
 drop policy if exists "staff read profiles" on public.profiles;
 create policy "staff read profiles" on public.profiles for select to authenticated using (public.is_omnexa_staff());
 

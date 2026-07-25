@@ -5,7 +5,7 @@ A deployable MVP for undergraduate admissions counselling using **Next.js**, **S
 ## What this MVP does
 
 - Staff login using Google OAuth through Supabase.
-- Access restricted to `@omnexagoc.com` staff email addresses.
+- Development/testing access for any user authenticated through Google.
 - Student intake form for undergraduate counselling.
 - Captures passion, purpose, budget, salary expectation, hostel need, subjects, preferred location and Future Plus support required.
 - Stores student records in Supabase.
@@ -53,7 +53,6 @@ Add these in Vercel Project Settings > Environment Variables:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxxxxxxxxxxxxxxxxxxxxx
-ALLOWED_STAFF_DOMAIN=omnexagoc.com
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4.1-mini
 ```
@@ -75,7 +74,7 @@ Then import the GitHub repository into Vercel and set the environment variables 
 
 ## Important production notes
 
-1. The current MVP restricts staff access by email domain. For production, add an explicit admin approval workflow using `profiles.allowed = true`.
+1. The current development/testing build permits any Google-authenticated user. Before production, add an explicit admin approval workflow using `profiles.allowed = true`.
 2. College data must be verified before final counselling advice. The seed data is sample data only.
 3. The MVP does not scrape the live web. The recommended production pattern is a verified college ingestion pipeline with source URLs, last-verified timestamps and admin approval.
 4. The fit score is transparent and rule-based. Keep this approach for auditability, then use AI only to improve explanation quality, not to invent data.
@@ -89,3 +88,15 @@ Then import the GitHub repository into Vercel and set the environment variables 
 - Partner CRM workflow.
 - Student communication templates.
 - Postgraduate programme module.
+
+## Updating an existing Supabase project
+
+If `001_initial_schema.sql` was already run before this version, run the following
+file once in **Supabase Dashboard > SQL Editor**:
+
+```text
+supabase/migrations/002_allow_authenticated_users_for_testing.sql
+```
+
+This updates the existing Row Level Security helper and profile records so Google
+users are not sent back to the login page or denied database access during testing.
