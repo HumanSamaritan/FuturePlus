@@ -52,6 +52,10 @@ export default function CollegeImport() {
       const uploadSummary = rows.slice(0, 3).map((row) => `${row.college_name} / ${row.course_name}`).join(', ');
       setMessage(`Uploading ${file.name}: ${uploadSummary}${rows.length > 3 ? ` and ${rows.length - 3} more` : ''}...`);
       const result = await importCollegeRowsAction(rows);
+      if (!result.ok) {
+        setMessage(`Upload failed: ${result.error} Reference: ${result.importId}`);
+        return;
+      }
       setMessage(`${result.updated} row(s) verified for ${result.records.join(', ')}. Opening the updated College Database...`);
       window.location.assign(`/colleges?imported=${result.updated}&refresh=${Date.now()}`);
     } catch (error) {

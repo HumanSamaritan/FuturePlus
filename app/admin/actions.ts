@@ -194,7 +194,7 @@ const ImportRowSchema = z.object({
 const truthy = (value: unknown) => ['true', 'yes', '1', 'y'].includes(String(value).toLowerCase());
 const nullableNumber = (value: unknown) => value === '' || value == null ? null : Number(value);
 
-export async function importCollegeRowsAction(rows: unknown[]) {
+async function importCollegeRows(rows: unknown[]) {
   const importId = crypto.randomUUID();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -282,4 +282,27 @@ export async function importCollegeRowsAction(rows: unknown[]) {
   const records = parsedRows.map((row) => `${row.college_name} / ${row.course_name}`);
   console.info('[college-import] completed', { importId, user: user.email, rows: records.length, records });
   return { imported: parsedRows.length, updated: verifiedCourses?.length ?? 0, records, importId };
+}
+
+export async function importCollegeRowsAction(rows: unknown[]) {
+  try {
+    const result = await importCollegeRows(rows);
+    return { ok: true as const, ...result };
+  } catch (error) {
+    const importId = crypto.randomUUID();
+    const message = error instanceof z.ZodError
+      ? error.issues.map((issue) => `${issue.path.join('.') || 'CSV'}: ${issue.message}`).join('; ')
+      : error instanceof Error
+        ? error.message
+        : 'The upload could not be completed.';
+    console.error('[college-import] request failed', { importId, message, error });
+    return {
+      ok: false as const,
+      imported: 0,
+      updated: 0,
+      records: [] as string[],
+      importId,
+      error: message
+    };
+  }
 }

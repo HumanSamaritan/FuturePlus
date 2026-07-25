@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getCourseCatalog } from '@/lib/data';
 import { updateCollegeCourseAction } from '@/app/admin/actions';
+import { CourseWithCollege } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -11,7 +12,14 @@ export default async function CollegesPage({
   searchParams: Promise<{ imported?: string; saved?: string }>;
 }) {
   const { imported, saved } = await searchParams;
-  const courses = await getCourseCatalog();
+  let courses: CourseWithCollege[] = [];
+  let catalogueError = '';
+  try {
+    courses = await getCourseCatalog();
+  } catch (error) {
+    catalogueError = crypto.randomUUID();
+    console.error('[college-catalogue] render failed', { reference: catalogueError, error });
+  }
 
   return (
     <section className="grid">
@@ -20,6 +28,7 @@ export default async function CollegesPage({
         <h1>UG college and course catalogue</h1>
         {imported ? <p className="success-message">{imported} uploaded row(s) are now visible in the database.</p> : null}
         {saved ? <p className="success-message">College and course changes saved successfully.</p> : null}
+        {catalogueError ? <p className="alert">The College Database could not be loaded. Please check the server log using reference {catalogueError} and confirm all database migrations are applied.</p> : null}
         <p className="muted">
           Partner colleges are visible to staff and preferred by the recommendation score. Non-partner standout colleges remain visible for unbiased counselling and future collaboration review.
         </p>
