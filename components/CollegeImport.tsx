@@ -4,14 +4,13 @@ import { useState } from 'react';
 import { importCollegeRowsAction } from '@/app/admin/actions';
 
 const headers = ['college_name','city','state','country','poc_name','poc_email','partner_status','commission_based','hostel_available','source_url','course_name','subject_area','duration','total_fee','placement_count','highest_package','average_package','currency'];
-const sample = ['Example University','Bhubaneswar','Odisha','India','Priya Das','priya@example.edu','preferred_partner','yes','yes','https://example.edu','B.Tech CSE','Engineering','4 years','600000','250','1800000','650000','INR'];
 
 export default function CollegeImport() {
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
 
   function downloadTemplate() {
-    const csv = [headers, sample].map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(',')).join('\n');
+    const csv = `${headers.map((cell) => `"${cell}"`).join(',')}\n`;
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     link.download = 'future-plus-college-import-template.csv';
@@ -47,8 +46,13 @@ export default function CollegeImport() {
       const rows = lines.slice(1).map((line) => Object.fromEntries(
         parseLine(line).map((value, index) => [columns[index], value.trim()])
       ));
+      if (rows.length === 1 && rows[0].college_name === 'Example University' && rows[0].course_name === 'B.Tech CSE') {
+        throw new Error('This is the unchanged example template. Replace the Example University row with your actual college data before uploading.');
+      }
+      const uploadSummary = rows.slice(0, 3).map((row) => `${row.college_name} / ${row.course_name}`).join(', ');
+      setMessage(`Uploading ${file.name}: ${uploadSummary}${rows.length > 3 ? ` and ${rows.length - 3} more` : ''}...`);
       const result = await importCollegeRowsAction(rows);
-      setMessage(`${result.updated} college/course rows verified. Opening the updated College Database...`);
+      setMessage(`${result.updated} row(s) verified for ${result.records.join(', ')}. Opening the updated College Database...`);
       window.location.assign(`/colleges?imported=${result.updated}&refresh=${Date.now()}`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Import failed. Please check the template.');
@@ -59,7 +63,7 @@ export default function CollegeImport() {
 
   return (
     <div className="import-panel">
-      <div><h2>Bulk college upload</h2><p className="muted">Download the template, complete it in Excel or Google Sheets, save as CSV, then upload it here. Existing matching colleges and courses are updated.</p></div>
+      <div><h2>Bulk college upload</h2><p className="muted">Download the blank template, add your college rows in Excel or Google Sheets, save as CSV, then upload it here. Existing matching colleges and courses are updated.</p></div>
       <div className="actions">
         <button type="button" className="secondary-button" onClick={downloadTemplate}>Download Excel-compatible template</button>
         <label className="primary-button file-button">{busy ? 'Importing...' : 'Choose CSV file'}<input type="file" accept=".csv,text/csv" disabled={busy} onChange={(event) => upload(event.target.files?.[0])} /></label>

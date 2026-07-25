@@ -195,11 +195,28 @@ const truthy = (value: unknown) => ['true', 'yes', '1', 'y'].includes(String(val
 const nullableNumber = (value: unknown) => value === '' || value == null ? null : Number(value);
 
 export async function importCollegeRowsAction(rows: unknown[]) {
+  const importId = crypto.randomUUID();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || !isAllowedUserEmail(user.email)) throw new Error('Approved staff access is required.');
 
-  const parsedRows = z.array(ImportRowSchema).min(1, 'The CSV contains no data rows.').max(1000).parse(rows);
+  let parsedRows: z.infer<typeof ImportRowSchema>[];
+  try {
+    parsedRows = z.array(ImportRowSchema).min(1, 'The CSV contains no data rows.').max(1000).parse(rows);
+  } catch (error) {
+    console.error('[college-import] validation failed', { importId, user: user.email, error });
+    throw error;
+  }
+  if (parsedRows.length === 1 && parsedRows[0].college_name === 'Example University' && parsedRows[0].course_name === 'B.Tech CSE') {
+    console.warn('[college-import] unchanged example template rejected', { importId, user: user.email });
+    throw new Error('The uploaded file is the unchanged example template. Replace the Example University row with the actual college data.');
+  }
+  console.info('[college-import] started', {
+    importId,
+    user: user.email,
+    rows: parsedRows.length,
+    records: parsedRows.map((row) => `${row.college_name} / ${row.course_name}`)
+  });
   const savedCourseIds: string[] = [];
   for (const row of parsedRows) {
     const { data: college, error: collegeError } = await supabase.from('colleges').upsert({
@@ -215,7 +232,10 @@ export async function importCollegeRowsAction(rows: unknown[]) {
       source_url: row.source_url || null,
       last_reviewed_at: new Date().toISOString()
     }, { onConflict: 'name,city,state' }).select('id').single();
-    if (collegeError) throw new Error(`${row.college_name}: ${collegeError.message}`);
+    if (collegeError) {
+      console.error('[college-import] college write failed', { importId, college: row.college_name, error: collegeError });
+      throw new Error(`${row.college_name}: ${collegeError.message}`);
+    }
 
     const { data: course, error: courseError } = await supabase.from('courses').upsert(
       {
@@ -231,7 +251,10 @@ export async function importCollegeRowsAction(rows: unknown[]) {
       },
       { onConflict: 'college_id,course_name' }
     ).select('id').single();
-    if (courseError) throw new Error(`${row.college_name} / ${row.course_name}: ${courseError.message}`);
+    if (courseError) {
+      console.error('[college-import] course write failed', { importId, college: row.college_name, course: row.course_name, error: courseError });
+      throw new Error(`${row.college_name} / ${row.course_name}: ${courseError.message}`);
+    }
     if (!course?.id) throw new Error(`${row.college_name} / ${row.course_name}: saved row could not be verified.`);
     savedCourseIds.push(course.id);
   }
@@ -240,13 +263,23 @@ export async function importCollegeRowsAction(rows: unknown[]) {
     .from('course_catalog_view')
     .select('course_id')
     .in('course_id', savedCourseIds);
-  if (verifyError) throw new Error(`Upload verification failed: ${verifyError.message}`);
+  if (verifyError) {
+    console.error('[college-import] catalogue verification query failed', { importId, error: verifyError });
+    throw new Error(`Upload verification failed: ${verifyError.message}`);
+  }
   if ((verifiedCourses?.length ?? 0) !== savedCourseIds.length) {
+    console.error('[college-import] catalogue verification count mismatch', {
+      importId,
+      saved: savedCourseIds.length,
+      visible: verifiedCourses?.length ?? 0
+    });
     throw new Error(`Upload verification failed: saved ${savedCourseIds.length} row(s), but only ${verifiedCourses?.length ?? 0} are visible in the College Database.`);
   }
 
   revalidatePath('/colleges');
   revalidatePath('/admin');
   revalidatePath('/dashboard');
-  return { imported: parsedRows.length, updated: verifiedCourses?.length ?? 0 };
+  const records = parsedRows.map((row) => `${row.college_name} / ${row.course_name}`);
+  console.info('[college-import] completed', { importId, user: user.email, rows: records.length, records });
+  return { imported: parsedRows.length, updated: verifiedCourses?.length ?? 0, records, importId };
 }
