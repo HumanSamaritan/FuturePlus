@@ -17,6 +17,7 @@ export default function HomePage() {
           <div className="actions">
             <a href="tel:+917008551071" className="primary-button">Talk to a counsellor</a>
             <a href="#programmes" className="secondary-button">Explore programmes</a>
+            <a href="https://futureplusedus.com/" target="_blank" rel="noreferrer" className="secondary-button">Visit Future Plus Website</a>
           </div>
           <div className="trust-row">
             <span><strong>3,500+</strong> students guided</span>
@@ -47,6 +48,41 @@ export default function HomePage() {
         <span className="kicker">Study destinations</span>
         <h2>Unlock your future in top education cities</h2>
         <div className="city-row">{cities.map((city) => <span key={city}>{city}</span>)}</div>
+      </section>
+
+      <section id="media" className="public-section media-section">
+        <div className="section-heading">
+          <span className="kicker">Media coverage & university updates</span>
+          <h2>Events, campus stories and education updates</h2>
+          <p className="muted">Watch recent Future Plus activities, university updates and videos from our social channels.</p>
+        </div>
+        <div className="media-grid">
+          <article className="media-card media-card-featured">
+            <video controls preload="metadata" playsInline>
+              <source src="/media/future-plus-event-highlight.mp4" type="video/mp4" />
+              Your browser does not support video playback.
+            </video>
+            <div><span className="media-label">Event video</span><h3>Future Plus event highlights</h3><p>Moments and updates from the Future Plus community.</p></div>
+          </article>
+          <article className="media-card">
+            <div className="video-frame">
+              <iframe src="https://www.youtube.com/embed/4zQucrg7mc4" title="Future Plus YouTube update" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+            </div>
+            <div><span className="media-label">YouTube</span><h3>University and student update</h3></div>
+          </article>
+          <article className="media-card">
+            <div className="video-frame">
+              <iframe src="https://www.youtube.com/embed/AAXIhhUcIXw" title="Future Plus university video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+            </div>
+            <div><span className="media-label">YouTube</span><h3>Education news and opportunities</h3></div>
+          </article>
+          <a className="media-card social-media-card" href="https://www.facebook.com/share/r/1CiQEzPbba/" target="_blank" rel="noreferrer">
+            <span className="media-label">Facebook video</span>
+            <h3>Watch our latest Facebook coverage</h3>
+            <p>Open the Future Plus Facebook reel to see the full update.</p>
+            <strong>Watch on Facebook →</strong>
+          </a>
+        </div>
       </section>
 
       <section className="public-section public-cta">

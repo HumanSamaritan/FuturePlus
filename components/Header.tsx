@@ -49,7 +49,7 @@ export default async function Header() {
       <nav>
         {isStaff ? (
           <>
-            <Link href="/dashboard">⌂ Overview</Link>
+            <Link href="/dashboard">← Dashboard</Link>
             <Link href="/students/new">＋ Student intake</Link>
             <Link href="/colleges">▦ College database</Link>
             <Link href="/admin">⇧ Imports & admin</Link>
@@ -61,7 +61,8 @@ export default async function Header() {
             <Link href="/#about">About</Link>
             <Link href="/#programmes">Programmes</Link>
             <Link href="/#colleges">Colleges</Link>
-            <a href="https://futureplusedus.com/" target="_blank" rel="noreferrer">Future Plus Website</a>
+            <Link href="/#media">Media & Updates</Link>
+            <a href="https://futureplusedus.com/" target="_blank" rel="noreferrer">Visit Future Plus Website</a>
             <a href="https://www.facebook.com/share/1BcYydGmG2/?mibextid=wwXIfr" target="_blank" rel="noreferrer">Facebook</a>
             <Link href="/login" className="nav-login">Future Plus Staff Login</Link>
           </>
