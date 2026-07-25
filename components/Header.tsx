@@ -70,7 +70,7 @@ export default async function Header() {
       {isStaff ? (
         <div className="staff-identity" aria-label="Signed-in staff member">
           <span className="staff-avatar">{staffName.slice(0, 1).toUpperCase()}</span>
-          <span><strong>{staffName}</strong><small>{staffEmail}</small></span>
+          <span><strong>Welcome, {staffName}</strong><small>{staffEmail}</small></span>
         </div>
       ) : null}
     </header>

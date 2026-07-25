@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
   const [{ count: studentCount }, { count: collegeCount }, { count: courseCount }, { data: students, error }] = await Promise.all([
     supabase.from('students').select('*', { count: 'exact', head: true }),
@@ -12,12 +13,32 @@ export default async function DashboardPage() {
     supabase.from('courses').select('*', { count: 'exact', head: true }),
     supabase
       .from('students')
-      .select('id, first_name, last_name, email, status, score, future_plus_id, created_at, subjects_interest, assigned_staff_name, assigned_staff_email')
+      .select('id, first_name, last_name, email, status, score, future_plus_id, created_at, subjects_interest, created_by, assigned_staff_name, assigned_staff_email')
       .order('created_at', { ascending: false })
       .limit(12)
   ]);
 
   if (error) throw new Error(error.message);
+
+  const creatorIds = [...new Set(
+    (students ?? [])
+      .map((student) => student.created_by)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0)
+  )];
+  const { data: creatorProfiles } = creatorIds.length
+    ? await supabase.from('profiles').select('id,full_name,email').in('id', creatorIds)
+    : { data: [] };
+  const profileById = new Map((creatorProfiles ?? []).map((profile) => [profile.id, profile]));
+  const { data: currentProfile } = user
+    ? await supabase.from('profiles').select('full_name,email').eq('id', user.id).maybeSingle()
+    : { data: null };
+  const staffEmail = currentProfile?.email || user?.email || '';
+  const staffName =
+    currentProfile?.full_name ||
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    staffEmail.split('@')[0] ||
+    'Future Plus Staff';
 
   const onboarded = (students ?? []).filter((student) => ['admitted', 'onboarded'].includes(student.status)).length;
 
@@ -25,7 +46,7 @@ export default async function DashboardPage() {
     <section className="grid">
       <div className="card">
         <span className="kicker">Future Plus organiser workspace</span>
-        <h1>Good to see you. Here’s your counselling pipeline.</h1>
+        <h1>Welcome, {staffName}. Here’s your counselling pipeline.</h1>
         <p className="muted">
           Manage student profiles, institutional relationships, recommendations and annual data reviews from one place.
         </p>
@@ -57,7 +78,11 @@ export default async function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {(students ?? []).map((student) => (
+              {(students ?? []).map((student) => {
+                const creator = student.created_by ? profileById.get(student.created_by) : null;
+                const managingStaffName = student.assigned_staff_name || creator?.full_name || 'Not assigned';
+                const managingStaffEmail = student.assigned_staff_email || creator?.email || '-';
+                return (
                 <tr key={student.id}>
                   <td>
                     <Link href={`/students/${student.id}`}><strong>{student.first_name} {student.last_name}</strong></Link>
@@ -67,12 +92,13 @@ export default async function DashboardPage() {
                   <td><span className="badge">{student.status}</span></td>
                   <td>{student.future_plus_id || '-'}</td>
                   <td>
-                    <strong>{student.assigned_staff_name || 'Not assigned'}</strong><br />
-                    <span className="muted">{student.assigned_staff_email || '-'}</span>
+                    <strong>{managingStaffName}</strong><br />
+                    <span className="muted">{managingStaffEmail}</span>
                   </td>
                   <td><ScorePill score={student.score} /></td>
                 </tr>
-              ))}
+                );
+              })}
               {!students?.length ? (
                 <tr><td colSpan={6}>No student records yet. Create the first student intake.</td></tr>
               ) : null}

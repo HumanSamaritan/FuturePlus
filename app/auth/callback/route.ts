@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServerClient } from '@supabase/ssr';
+import { getSupabaseConfig } from '@/lib/env';
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -19,18 +20,25 @@ export async function GET(request: NextRequest) {
   }
 
   if (code) {
-    const supabase = await createClient();
+    const forwardedHost = request.headers.get('x-forwarded-host');
+    const forwardedProto = request.headers.get('x-forwarded-proto') ?? 'https';
+    const destination = forwardedHost
+      ? `${forwardedProto}://${forwardedHost}${next}`
+      : new URL(next, requestUrl.origin);
+    const response = NextResponse.redirect(destination);
+    const { url, publishableKey } = getSupabaseConfig();
+    const supabase = createServerClient(url, publishableKey, {
+      cookies: {
+        getAll: () => request.cookies.getAll(),
+        setAll: (cookiesToSet) => {
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+        }
+      }
+    });
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      const forwardedHost = request.headers.get('x-forwarded-host');
-      const forwardedProto = request.headers.get('x-forwarded-proto') ?? 'https';
-
-      if (forwardedHost) {
-        return NextResponse.redirect(`${forwardedProto}://${forwardedHost}${next}`);
-      }
-
-      return NextResponse.redirect(new URL(next, requestUrl.origin));
+      return response;
     }
 
     const loginUrl = new URL('/login', requestUrl.origin);
