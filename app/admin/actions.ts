@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { isAllowedUserEmail } from '@/lib/env';
 import { createClient } from '@/lib/supabase/server';
@@ -158,6 +159,7 @@ export async function updateCollegeCourseAction(formData: FormData) {
   revalidatePath('/colleges');
   revalidatePath('/admin');
   revalidatePath('/dashboard');
+  redirect('/colleges?saved=1');
 }
 
 const optionalText = z.preprocess(
@@ -198,6 +200,7 @@ export async function importCollegeRowsAction(rows: unknown[]) {
   if (!user || !isAllowedUserEmail(user.email)) throw new Error('Approved staff access is required.');
 
   const parsedRows = z.array(ImportRowSchema).min(1, 'The CSV contains no data rows.').max(1000).parse(rows);
+  const savedCourseIds: string[] = [];
   for (const row of parsedRows) {
     const { data: college, error: collegeError } = await supabase.from('colleges').upsert({
       name: row.college_name,
@@ -214,21 +217,36 @@ export async function importCollegeRowsAction(rows: unknown[]) {
     }, { onConflict: 'name,city,state' }).select('id').single();
     if (collegeError) throw new Error(`${row.college_name}: ${collegeError.message}`);
 
-    const { error: courseError } = await supabase.from('courses').upsert({
-      college_id: college.id,
-      course_name: row.course_name,
-      subject_area: row.subject_area,
-      duration: row.duration || null,
-      total_fee: nullableNumber(row.total_fee),
-      placement_count: nullableNumber(row.placement_count),
-      highest_package: nullableNumber(row.highest_package),
-      average_package: nullableNumber(row.average_package),
-      currency: row.currency || 'INR'
-    }, { onConflict: 'college_id,course_name' });
+    const { data: course, error: courseError } = await supabase.from('courses').upsert(
+      {
+        college_id: college.id,
+        course_name: row.course_name,
+        subject_area: row.subject_area,
+        duration: row.duration || null,
+        total_fee: nullableNumber(row.total_fee),
+        placement_count: nullableNumber(row.placement_count),
+        highest_package: nullableNumber(row.highest_package),
+        average_package: nullableNumber(row.average_package),
+        currency: row.currency || 'INR'
+      },
+      { onConflict: 'college_id,course_name' }
+    ).select('id').single();
     if (courseError) throw new Error(`${row.college_name} / ${row.course_name}: ${courseError.message}`);
+    if (!course?.id) throw new Error(`${row.college_name} / ${row.course_name}: saved row could not be verified.`);
+    savedCourseIds.push(course.id);
   }
+
+  const { data: verifiedCourses, error: verifyError } = await supabase
+    .from('course_catalog_view')
+    .select('course_id')
+    .in('course_id', savedCourseIds);
+  if (verifyError) throw new Error(`Upload verification failed: ${verifyError.message}`);
+  if ((verifiedCourses?.length ?? 0) !== savedCourseIds.length) {
+    throw new Error(`Upload verification failed: saved ${savedCourseIds.length} row(s), but only ${verifiedCourses?.length ?? 0} are visible in the College Database.`);
+  }
+
   revalidatePath('/colleges');
   revalidatePath('/admin');
   revalidatePath('/dashboard');
-  return { imported: parsedRows.length, updated: parsedRows.length };
+  return { imported: parsedRows.length, updated: verifiedCourses?.length ?? 0 };
 }

@@ -48,7 +48,8 @@ export default function CollegeImport() {
         parseLine(line).map((value, index) => [columns[index], value.trim()])
       ));
       const result = await importCollegeRowsAction(rows);
-      setMessage(`${result.updated} college/course rows saved. Refreshing the College Database will show the updates.`);
+      setMessage(`${result.updated} college/course rows verified. Opening the updated College Database...`);
+      window.location.assign(`/colleges?imported=${result.updated}&refresh=${Date.now()}`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Import failed. Please check the template.');
     } finally {

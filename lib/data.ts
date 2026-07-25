@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { CourseWithCollege } from './types';
+import { unstable_noStore as noStore } from 'next/cache';
 
 export async function getCourseCatalog(): Promise<CourseWithCollege[]> {
+  noStore();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('course_catalog_view')
