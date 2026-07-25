@@ -167,6 +167,35 @@ const optionalText = z.preprocess(
   z.string().optional()
 );
 
+function normalisePartnerStatus(value: unknown) {
+  const normalised = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_');
+
+  const aliases: Record<string, 'preferred_partner' | 'pipeline_partner' | 'non_partner'> = {
+    preferred_partner: 'preferred_partner',
+    preferred: 'preferred_partner',
+    partner: 'preferred_partner',
+    yes: 'preferred_partner',
+    pipeline_partner: 'pipeline_partner',
+    pipeline: 'pipeline_partner',
+    prospective_partner: 'pipeline_partner',
+    prospective: 'pipeline_partner',
+    non_partner: 'non_partner',
+    nonpartner: 'non_partner',
+    no: 'non_partner',
+    none: 'non_partner',
+    na: 'non_partner',
+    'n/a': 'non_partner',
+    '': 'non_partner'
+  };
+
+  // Partner status is optional operational metadata. Unknown spreadsheet labels
+  // must not block otherwise valid college/course rows from being imported.
+  return aliases[normalised] ?? 'non_partner';
+}
+
 const ImportRowSchema = z.object({
   college_name: z.string().trim().min(1),
   city: optionalText,
@@ -175,7 +204,7 @@ const ImportRowSchema = z.object({
   poc_name: optionalText,
   poc_email: z.preprocess((value) => String(value || '').trim(), z.string().email().optional().or(z.literal(''))),
   partner_status: z.preprocess(
-    (value) => String(value || 'non_partner').trim().toLowerCase(),
+    normalisePartnerStatus,
     z.enum(['preferred_partner', 'pipeline_partner', 'non_partner'])
   ),
   commission_based: z.union([z.boolean(), z.string()]).optional(),
