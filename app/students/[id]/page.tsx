@@ -66,8 +66,8 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
 
       {student.desired_program_level === 'postgraduate' ? (
         <div className="card">
-          <h2>Postgraduate applicant profile</h2>
-          <p><strong>Undergraduate degree:</strong> {student.undergraduate_degree || '-'} {student.undergraduate_specialisation ? `(${student.undergraduate_specialisation})` : ''}</p>
+          <h2>Post Graduate applicant profile</h2>
+          <p><strong>Under Graduate degree:</strong> {student.undergraduate_degree || '-'} {student.undergraduate_specialisation ? `(${student.undergraduate_specialisation})` : ''}</p>
           <p><strong>University:</strong> {student.undergraduate_university || '-'}</p>
           <p><strong>Graduation year:</strong> {student.undergraduate_graduation_year || '-'}</p>
           <p><strong>Applicant status:</strong> {student.pg_applicant_status?.replaceAll('_', ' ') || '-'}</p>
@@ -81,7 +81,7 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
       <div className="card">
         <span className="kicker">Gemini staff intelligence</span>
         <h2>AI counselling and college-fit review</h2>
-        <p className="muted">Gemini reviews the database-grounded UG/PG shortlist. Staff should verify live university details before advising the student.</p>
+        <p className="muted">Gemini reviews the database-grounded Under Graduate/Post Graduate shortlist. Staff should verify live university details before advising the student.</p>
         <pre>{student.ai_summary || 'No summary generated yet.'}</pre>
         <form action={regenerateCounsellingSummaryAction}>
           <input type="hidden" name="studentId" value={student.id} />

@@ -24,8 +24,8 @@ export default function AdminPage() {
             <div className="field">
               <label htmlFor="programLevel">Program level</label>
               <select id="programLevel" name="programLevel" defaultValue="undergraduate">
-                <option value="undergraduate">Undergraduate</option>
-                <option value="postgraduate">Postgraduate</option>
+                <option value="undergraduate">Under Graduate</option>
+                <option value="postgraduate">Post Graduate</option>
               </select>
             </div>
             <div className="field">

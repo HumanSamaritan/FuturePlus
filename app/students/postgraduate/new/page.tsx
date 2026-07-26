@@ -33,15 +33,15 @@ const PG_INTERESTS = [
 export default function NewPostgraduateStudentPage() {
   return (
     <section className="form-card">
-      <span className="kicker">Postgraduate Student Intake</span>
-      <h1>Postgraduate counselling form</h1>
+      <span className="kicker">Post Graduate Student Intake</span>
+      <h1>Post Graduate counselling form</h1>
       <p className="muted">Capture graduation progress, semester results, final marks and professional experience for postgraduate counselling.</p>
 
       <StudentIntakeWizard
         action={createStudentAction}
         programLevel="postgraduate"
         stepLabels={['Applicant', 'Academics', 'Semester marks', 'Experience', 'Preferences', 'Goals']}
-        submitLabel="Save PG Student and Generate Recommendations"
+        submitLabel="Save Post Graduate Student and Generate Recommendations"
       >
 
         <div className="form-section">
@@ -63,7 +63,7 @@ export default function NewPostgraduateStudentPage() {
             <div className="field"><label htmlFor="marksX">Marks in X (%)</label><input id="marksX" name="marksX" type="number" min="0" max="100" step=".01" /></div>
             <div className="field"><label htmlFor="yearXii">Year for XII</label><input id="yearXii" name="yearXii" type="number" min="1950" max="2100" /></div>
             <div className="field"><label htmlFor="marksXii">Marks in XII (%)</label><input id="marksXii" name="marksXii" type="number" min="0" max="100" step=".01" /></div>
-            <div className="field"><label htmlFor="undergraduateDegree">Undergraduate degree *</label><input id="undergraduateDegree" name="undergraduateDegree" placeholder="B.Tech, BBA, B.Com, B.Sc..." required /></div>
+            <div className="field"><label htmlFor="undergraduateDegree">Under Graduate degree *</label><input id="undergraduateDegree" name="undergraduateDegree" placeholder="B.Tech, BBA, B.Com, B.Sc..." required /></div>
             <div className="field"><label htmlFor="undergraduateSpecialisation">Specialisation</label><input id="undergraduateSpecialisation" name="undergraduateSpecialisation" /></div>
             <div className="field"><label htmlFor="undergraduateUniversity">College / University *</label><input id="undergraduateUniversity" name="undergraduateUniversity" required /></div>
             <div className="field"><label htmlFor="undergraduateGraduationYear">Graduation / expected year *</label><input id="undergraduateGraduationYear" name="undergraduateGraduationYear" type="number" min="1950" max="2100" required /></div>
@@ -105,9 +105,9 @@ export default function NewPostgraduateStudentPage() {
         </div>
 
         <div className="form-section">
-          <h2>5. Postgraduate preference</h2>
+          <h2>5. Post Graduate preference</h2>
           <div className="grid grid-2">
-            <div className="field"><label htmlFor="subjectsInterest">PG course interests *</label><select id="subjectsInterest" name="subjectsInterest" multiple required>{PG_INTERESTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
+            <div className="field"><label htmlFor="subjectsInterest">Post Graduate course interests *</label><select id="subjectsInterest" name="subjectsInterest" multiple required>{PG_INTERESTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
             <div className="field"><label htmlFor="preferredLocations">Preferred locations</label><select id="preferredLocations" name="preferredLocations" multiple>{INDIA_STATES_AND_REGIONS.map((item) => <option key={item}>{item}</option>)}</select></div>
             <div className="field"><label htmlFor="targetIntake">Target intake</label><input id="targetIntake" name="targetIntake" placeholder="2027 July" /></div>
             <div className="field"><label htmlFor="salaryExpectation">Expected package, INR</label><input id="salaryExpectation" name="salaryExpectation" type="number" min="0" /></div>
@@ -117,7 +117,7 @@ export default function NewPostgraduateStudentPage() {
                 <option value="" disabled>Select minimum budget</option>
                 {TOTAL_COST_BUDGET_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
-              <span className="help-text">Overall PG programme cost, not per semester or year.</span>
+              <span className="help-text">Overall Post Graduate programme cost, not per semester or year.</span>
             </div>
             <div className="field">
               <label htmlFor="budgetMax">Maximum total course cost</label>

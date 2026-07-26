@@ -163,7 +163,7 @@ export async function createStudentAction(formData: FormData) {
   }
   if (parsed.programLevel === 'postgraduate') {
     if (!parsed.undergraduateDegree || !parsed.undergraduateUniversity || !parsed.pgApplicantStatus) {
-      throw new Error('Undergraduate degree, university and applicant status are required for PG intake.');
+      throw new Error('Under Graduate degree, university and applicant status are required for Post Graduate intake.');
     }
     if (parsed.pgApplicantStatus === 'final_semester' && !Object.keys(semesterMarks).length) {
       throw new Error('Enter all available semester percentage results for a final-semester applicant.');

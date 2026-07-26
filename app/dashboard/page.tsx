@@ -53,8 +53,8 @@ export default async function DashboardPage() {
           Manage student profiles, institutional relationships, recommendations and annual data reviews from one place.
         </p>
         <div className="actions">
-          <Link href="/students/new" className="primary-button">Create UG Intake</Link>
-          <Link href="/students/postgraduate/new" className="primary-button">Create PG Intake</Link>
+          <Link href="/students/new" className="primary-button">Create Under Graduate Intake</Link>
+          <Link href="/students/postgraduate/new" className="primary-button">Create Post Graduate Intake</Link>
           <Link href="/admin" className="secondary-button">Add College / Course</Link>
         </div>
       </div>
@@ -62,7 +62,7 @@ export default async function DashboardPage() {
       <div className="dashboard-grid">
         <StatCard label="Students" value={studentCount ?? 0} helper="All intake records" />
         <StatCard label="Colleges" value={collegeCount ?? 0} helper="Partner and non-partner" />
-        <StatCard label="Courses" value={courseCount ?? 0} helper="UG catalogue records" />
+        <StatCard label="Courses" value={courseCount ?? 0} helper="Under Graduate and Post Graduate catalogue records" />
         <StatCard label="Admitted / Onboarded" value={onboarded} helper="Recent visible records" />
       </div>
 
@@ -73,7 +73,7 @@ export default async function DashboardPage() {
             <thead>
               <tr>
                 <th>Student</th>
-                <th>UG/PG</th>
+                <th>Programme Level</th>
                 <th>Subjects</th>
                 <th>Status</th>
                 <th>Future Plus ID</th>
@@ -93,7 +93,7 @@ export default async function DashboardPage() {
                     <Link href={`/students/${student.id}`}><strong>{student.first_name} {student.last_name}</strong></Link>
                     <br /><span className="muted">{student.email || 'No email captured'}</span>
                   </td>
-                  <td><span className="programme-badge">{student.desired_program_level === 'postgraduate' ? 'PG' : 'UG'}</span></td>
+                  <td><span className="programme-badge">{student.desired_program_level === 'postgraduate' ? 'Post Graduate' : 'Under Graduate'}</span></td>
                   <td>{student.subjects_interest?.join(', ') || '-'}</td>
                   <td><span className="badge">{student.status}</span></td>
                   <td>{student.future_plus_id || '-'}</td>

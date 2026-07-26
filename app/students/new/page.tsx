@@ -29,7 +29,7 @@ export default async function NewStudentPage() {
   return (
     <section className="form-card">
       <span className="kicker">Student Intake</span>
-      <h1>Undergraduate counselling form</h1>
+      <h1>Under Graduate counselling form</h1>
       <p className="muted">
         Capture the student requirement once. The system will store the record in Supabase and generate a first-pass recommendation score.
       </p>

@@ -25,7 +25,7 @@ export default async function CollegesPage({
     <section className="grid">
       <div className="card">
         <span className="kicker">College Database</span>
-        <h1>UG college and course catalogue</h1>
+        <h1>Under Graduate and Post Graduate college and university catalogue</h1>
         {imported ? <p className="success-message">{imported} uploaded row(s) are now visible in the database.</p> : null}
         {saved ? <p className="success-message">College and course changes saved successfully.</p> : null}
         {catalogueError ? <p className="alert">The College Database could not be loaded. Please check the server log using reference {catalogueError} and confirm all database migrations are applied.</p> : null}
@@ -69,7 +69,7 @@ export default async function CollegesPage({
                   key={course.course_id}
                 >
                   <td><strong>{course.college_name}</strong></td>
-                  <td>{course.subject_area}<br /><span className="muted">{course.course_name} · {course.program_level === 'postgraduate' ? 'PG' : 'UG'}</span></td>
+                  <td>{course.subject_area}<br /><span className="muted">{course.course_name} · {course.program_level === 'postgraduate' ? 'Post Graduate' : 'Under Graduate'}</span></td>
                   <td>{course.duration || '-'}</td>
                   <td>{course.total_fee ? `${course.total_fee.toLocaleString('en-IN')} ${course.currency || 'INR'}` : 'Verify'}</td>
                   <td>{[course.city, course.state, course.country].filter(Boolean).join(', ')}</td>
@@ -94,7 +94,7 @@ export default async function CollegesPage({
                         <input type="hidden" name="courseId" value={course.course_id} />
                         <label>College<input name="collegeName" defaultValue={course.college_name} required /></label>
                         <label>Course<input name="courseName" defaultValue={course.course_name} required /></label>
-                        <label>Program level<select name="programLevel" defaultValue={course.program_level || 'undergraduate'}><option value="undergraduate">Undergraduate</option><option value="postgraduate">Postgraduate</option></select></label>
+                        <label>Programme level<select name="programLevel" defaultValue={course.program_level || 'undergraduate'}><option value="undergraduate">Under Graduate</option><option value="postgraduate">Post Graduate</option></select></label>
                         <label>Subject<input name="subjectArea" defaultValue={course.subject_area} required /></label>
                         <label>Duration<input name="duration" defaultValue={course.duration || ''} /></label>
                         <label>City<input name="city" defaultValue={course.city || ''} /></label>
