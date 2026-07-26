@@ -5,6 +5,23 @@ type GeminiResponse = {
   promptFeedback?: { blockReason?: string };
 };
 
+type GeminiModelsResponse = {
+  models?: Array<{
+    name?: string;
+    baseModelId?: string;
+    supportedGenerationMethods?: string[];
+  }>;
+};
+
+function getGeminiErrorMessage(errorText: string) {
+  try {
+    const parsed = JSON.parse(errorText) as { error?: { message?: string; status?: string } };
+    return [parsed.error?.status, parsed.error?.message].filter(Boolean).join(': ').slice(0, 350);
+  } catch {
+    return errorText.replace(/\s+/g, ' ').trim().slice(0, 350);
+  }
+}
+
 export async function generateCounsellingSummary(
   student: StudentInput,
   courses: CourseWithCollege[],
@@ -15,7 +32,13 @@ export async function generateCounsellingSummary(
     .trim()
     .replace(/^['"]|['"]$/g, '')
     .replace(/^models\//i, '');
-  const modelCandidates = [...new Set([configuredModel, 'gemini-2.5-flash'])];
+  const modelCandidates = [
+    configuredModel,
+    'gemini-2.5-flash',
+    'gemini-3.6-flash',
+    'gemini-3.5-flash',
+    'gemini-flash-latest'
+  ];
   const programmeLabel = student.programLevel === 'postgraduate' ? 'PG' : 'UG';
 
   const shortlistedColleges = recommendations.map((rec) => {
@@ -71,7 +94,31 @@ Database-grounded shortlist:
 ${JSON.stringify(shortlistedColleges, null, 2)}`;
 
   try {
-    for (const model of modelCandidates) {
+    const modelListResponse = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000',
+      { headers: { 'x-goog-api-key': geminiKey } }
+    );
+    if (modelListResponse.ok) {
+      const modelList = await modelListResponse.json() as GeminiModelsResponse;
+      const availableGenerateContentModels = (modelList.models ?? [])
+        .filter((item) => item.supportedGenerationMethods?.includes('generateContent'))
+        .map((item) => item.baseModelId || item.name?.replace(/^models\//, '') || '')
+        .filter((item) => item.startsWith('gemini-'))
+        .filter((item) => !/(embedding|image|tts|live|robotics|computer-use)/i.test(item));
+      modelCandidates.push(...availableGenerateContentModels);
+    } else {
+      const modelListError = await modelListResponse.text();
+      console.error('[gemini] could not list available models', {
+        status: modelListResponse.status,
+        response: modelListError.slice(0, 500)
+      });
+      if (modelListResponse.status === 403) {
+        return `Gemini permission denied while checking available models. Google response: ${getGeminiErrorMessage(modelListError)}`;
+      }
+    }
+
+    const uniqueModelCandidates = [...new Set(modelCandidates.filter(Boolean))];
+    for (const [index, model] of uniqueModelCandidates.entries()) {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
         {
@@ -94,8 +141,8 @@ ${JSON.stringify(shortlistedColleges, null, 2)}`;
           status: response.status,
           response: errorText.slice(0, 500)
         });
-        if (response.status === 404 && model !== modelCandidates.at(-1)) continue;
-        return `Gemini counselling review could not be generated (HTTP ${response.status}, model ${model}). The verified college-fit table below is still available for staff review.`;
+        if (response.status === 404 && index < uniqueModelCandidates.length - 1) continue;
+        return `Gemini counselling review could not be generated (HTTP ${response.status}, model ${model}). Google response: ${getGeminiErrorMessage(errorText)}. The verified college-fit table below is still available for staff review.`;
       }
 
       const data = await response.json() as GeminiResponse;
