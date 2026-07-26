@@ -321,7 +321,7 @@ async function importCollegeRows(
       saved: savedCourseIds.length,
       visible: verifiedCourses?.length ?? 0
     });
-    throw new Error(`Upload verification failed: saved ${savedCourseIds.length} row(s), but only ${verifiedCourses?.length ?? 0} are visible in the College Database.`);
+    throw new Error(`Upload verification failed: saved ${savedCourseIds.length} row(s), but only ${verifiedCourses?.length ?? 0} are visible in Universities.`);
   }
 
   revalidatePath('/colleges');

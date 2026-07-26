@@ -51,13 +51,34 @@ export default async function Header() {
       <nav>
         {isStaff ? (
           <>
-            <Link href="/dashboard">← Dashboard</Link>
-            <Link href="/students/new">＋ UG intake</Link>
-            <Link href="/students/postgraduate/new">＋ PG intake</Link>
-            <Link href="/colleges">▦ College database</Link>
-            <Link href="/admin">⇧ Imports & admin</Link>
-            <a href="https://futureplusedus.com/" target="_blank" rel="noreferrer">↗ Public website</a>
-            <a href="/logout" className="logout-link">Logout</a>
+            <Link href="/dashboard">
+              <span className="workspace-nav-icon" aria-hidden="true">&#10024;</span>
+              <span>Dashboard</span>
+            </Link>
+            <Link href="/students/new">
+              <span className="workspace-nav-icon" aria-hidden="true">&#127891;</span>
+              <span>Under Graduate intake</span>
+            </Link>
+            <Link href="/students/postgraduate/new">
+              <span className="workspace-nav-icon" aria-hidden="true">&#128640;</span>
+              <span>Post Graduate intake</span>
+            </Link>
+            <Link href="/colleges">
+              <span className="workspace-nav-icon" aria-hidden="true">&#127963;</span>
+              <span>Universities Database</span>
+            </Link>
+            <Link href="/admin">
+              <span className="workspace-nav-icon" aria-hidden="true">&#128229;</span>
+              <span>Imports &amp; admin</span>
+            </Link>
+            <a href="https://futureplusedus.com/" target="_blank" rel="noreferrer">
+              <span className="workspace-nav-icon" aria-hidden="true">&#127760;</span>
+              <span>Public website</span>
+            </a>
+            <a href="/logout" className="logout-link">
+              <span className="workspace-nav-icon" aria-hidden="true">&#128075;</span>
+              <span>Logout</span>
+            </a>
           </>
         ) : (
           <>

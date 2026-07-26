@@ -7,10 +7,17 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const [{ count: studentCount }, { count: collegeCount }, { count: courseCount }, { data: students, error }] = await Promise.all([
+  const [
+    { count: studentCount },
+    { count: collegeCount },
+    { count: underGraduateCourseCount },
+    { count: postGraduateCourseCount },
+    { data: students, error }
+  ] = await Promise.all([
     supabase.from('students').select('*', { count: 'exact', head: true }),
     supabase.from('colleges').select('*', { count: 'exact', head: true }),
-    supabase.from('courses').select('*', { count: 'exact', head: true }),
+    supabase.from('courses').select('*', { count: 'exact', head: true }).eq('program_level', 'undergraduate'),
+    supabase.from('courses').select('*', { count: 'exact', head: true }).eq('program_level', 'postgraduate'),
     supabase
       .from('students')
       .select('id, first_name, last_name, email, status, score, future_plus_id, created_at, subjects_interest, desired_program_level, financial_aid_required, created_by, assigned_staff_name, assigned_staff_email')
@@ -55,14 +62,15 @@ export default async function DashboardPage() {
         <div className="actions">
           <Link href="/students/new" className="primary-button">Create Under Graduate Intake</Link>
           <Link href="/students/postgraduate/new" className="primary-button">Create Post Graduate Intake</Link>
-          <Link href="/admin" className="secondary-button">Add College / Course</Link>
+          <Link href="/admin" className="secondary-button">Add University / Course</Link>
         </div>
       </div>
 
       <div className="dashboard-grid">
         <StatCard label="Students" value={studentCount ?? 0} helper="All intake records" />
-        <StatCard label="Colleges" value={collegeCount ?? 0} helper="Partner and non-partner" />
-        <StatCard label="Courses" value={courseCount ?? 0} helper="Under Graduate and Post Graduate catalogue records" />
+        <StatCard label="Universities" value={collegeCount ?? 0} helper="Partner and non-partner institutions" />
+        <StatCard label="Under Graduate Courses" value={underGraduateCourseCount ?? 0} helper="Under Graduate catalogue records" />
+        <StatCard label="Post Graduate Courses" value={postGraduateCourseCount ?? 0} helper="Post Graduate catalogue records" />
         <StatCard label="Admitted / Onboarded" value={onboarded} helper="Recent visible records" />
       </div>
 

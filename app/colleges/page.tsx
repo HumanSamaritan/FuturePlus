@@ -20,30 +20,51 @@ export default async function CollegesPage({
     catalogueError = crypto.randomUUID();
     console.error('[college-catalogue] render failed', { reference: catalogueError, error });
   }
+  const catalogueSections = [
+    {
+      key: 'undergraduate',
+      title: 'Under Graduate Universities and Courses',
+      courses: courses.filter((course) => course.program_level !== 'postgraduate')
+    },
+    {
+      key: 'postgraduate',
+      title: 'Post Graduate Universities and Courses',
+      courses: courses.filter((course) => course.program_level === 'postgraduate')
+    }
+  ];
 
   return (
     <section className="grid">
       <div className="card">
-        <span className="kicker">College Database</span>
-        <h1>Under Graduate and Post Graduate college and university catalogue</h1>
-        {imported ? <p className="success-message">{imported} uploaded row(s) are now visible in the database.</p> : null}
-        {saved ? <p className="success-message">College and course changes saved successfully.</p> : null}
-        {catalogueError ? <p className="alert">The College Database could not be loaded. Please check the server log using reference {catalogueError} and confirm all database migrations are applied.</p> : null}
+        <span className="kicker">Universities</span>
+        <h1>Under Graduate and Post Graduate university catalogue</h1>
+        {imported ? <p className="success-message">{imported} uploaded row(s) are now visible in Universities.</p> : null}
+        {saved ? <p className="success-message">University and course changes saved successfully.</p> : null}
+        {catalogueError ? <p className="alert">Universities could not be loaded. Please check the server log using reference {catalogueError} and confirm all database migrations are applied.</p> : null}
         <p className="muted">
-          Partner colleges are visible to staff and preferred by the recommendation score. Non-partner standout colleges remain visible for unbiased counselling and future collaboration review.
+          Partner universities are visible to staff and preferred by the recommendation score. Non-partner standout universities remain visible for unbiased counselling and future collaboration review.
         </p>
         <div className="actions">
-          <Link href="/admin" className="primary-button">Add College / Course</Link>
+          <Link href="/admin" className="primary-button">Add University / Course</Link>
           <Link href="/students/new" className="secondary-button">Create Student Intake</Link>
         </div>
       </div>
 
-      <div className="table-card college-database">
+      {catalogueSections.map((section) => (
+      <div className={`catalogue-section catalogue-${section.key}`} key={section.key}>
+        <div className="catalogue-section-heading">
+          <span className={`programme-badge programme-${section.key}`}>
+            {section.key === 'postgraduate' ? 'Post Graduate' : 'Under Graduate'}
+          </span>
+          <h2>{section.title}</h2>
+          <p className="muted">{section.courses.length} course record(s)</p>
+        </div>
+        <div className="table-card college-database">
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>College Name</th>
+                <th>University Name</th>
                 <th>Subject / Course</th>
                 <th>Duration</th>
                 <th>Total Fee</th>
@@ -57,7 +78,7 @@ export default async function CollegesPage({
               </tr>
             </thead>
             <tbody>
-              {courses.map((course) => (
+              {section.courses.map((course) => (
                 <tr
                   className={
                     course.partner_status === 'preferred_partner'
@@ -92,7 +113,7 @@ export default async function CollegesPage({
                       <form action={updateCollegeCourseAction} className="inline-edit-form">
                         <input type="hidden" name="collegeId" value={course.college_id} />
                         <input type="hidden" name="courseId" value={course.course_id} />
-                        <label>College<input name="collegeName" defaultValue={course.college_name} required /></label>
+                        <label>University<input name="collegeName" defaultValue={course.college_name} required /></label>
                         <label>Course<input name="courseName" defaultValue={course.course_name} required /></label>
                         <label>Programme level<select name="programLevel" defaultValue={course.program_level || 'undergraduate'}><option value="undergraduate">Under Graduate</option><option value="postgraduate">Post Graduate</option></select></label>
                         <label>Subject<input name="subjectArea" defaultValue={course.subject_area} required /></label>
@@ -117,11 +138,13 @@ export default async function CollegesPage({
                   </td>
                 </tr>
               ))}
-              {!courses.length ? <tr><td colSpan={11}>No college records yet. Add seed data in Supabase or use the Admin page.</td></tr> : null}
+              {!section.courses.length ? <tr><td colSpan={11}>No {section.key === 'postgraduate' ? 'Post Graduate' : 'Under Graduate'} university records yet. Use the Admin page to add or upload records.</td></tr> : null}
             </tbody>
           </table>
         </div>
+        </div>
       </div>
+      ))}
     </section>
   );
 }

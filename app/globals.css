@@ -55,7 +55,7 @@ main {
 .workspace-nav {
   position: fixed;
   inset: 0 auto 0 0;
-  width: 250px;
+  width: 275px;
   align-items: stretch;
   justify-content: flex-start;
   flex-direction: column;
@@ -73,14 +73,40 @@ main {
 }
 
 .workspace-nav nav a {
+  display: flex;
+  align-items: center;
+  gap: 11px;
   padding: 12px 14px;
   border-radius: 10px;
   font-weight: 650;
+  transition: color .18s ease, background .18s ease, transform .18s ease;
 }
 
-.workspace-nav nav a:hover { background: #f1f4ff; color: #4f46e5; }
+.workspace-nav nav a:hover {
+  color: #4f46e5;
+  background: #f1f4ff;
+  transform: translateX(3px);
+}
+.workspace-nav-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #eef2ff, #fdf2f8);
+  box-shadow: inset 0 0 0 1px rgba(79, 70, 229, .1);
+  font-size: 1rem;
+  line-height: 1;
+}
+.workspace-nav nav a:nth-child(2) .workspace-nav-icon { background: linear-gradient(135deg, #dbeafe, #e0f2fe); }
+.workspace-nav nav a:nth-child(3) .workspace-nav-icon { background: linear-gradient(135deg, #ede9fe, #fce7f3); }
+.workspace-nav nav a:nth-child(4) .workspace-nav-icon { background: linear-gradient(135deg, #dcfce7, #d1fae5); }
+.workspace-nav nav a:nth-child(5) .workspace-nav-icon { background: linear-gradient(135deg, #fef3c7, #ffedd5); }
+.workspace-nav nav a:nth-child(6) .workspace-nav-icon { background: linear-gradient(135deg, #cffafe, #dbeafe); }
+.workspace-nav .logout-link .workspace-nav-icon { background: linear-gradient(135deg, #ffe4e6, #fce7f3); }
 .workspace-nav .logout-link { margin-top: 24px; color: var(--danger); }
-.workspace-nav + main { width: auto; margin-left: 250px; padding: 32px; max-width: 1500px; }
+.workspace-nav + main { width: auto; margin-left: 275px; padding: 32px; max-width: 1500px; }
 .workspace-nav + main h1 { font-size: clamp(1.75rem, 3vw, 2.65rem); }
 .workspace-nav + main h2 { font-size: clamp(1.25rem, 2vw, 1.75rem); }
 .staff-identity {
@@ -380,7 +406,7 @@ p {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 16px;
   margin: 24px 0;
 }
@@ -534,6 +560,24 @@ tr:hover td {
   font-weight: 850;
 }
 .programme-badge { color: #4338ca; background: #eef2ff; }
+.programme-badge.programme-undergraduate { color: #1d4ed8; background: #dbeafe; }
+.programme-badge.programme-postgraduate { color: #166534; background: #dcfce7; }
+
+.catalogue-section {
+  display: grid;
+  gap: 14px;
+}
+
+.catalogue-section-heading {
+  padding: 22px 28px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: #fff;
+}
+
+.catalogue-section-heading h2 {
+  margin: 12px 0 4px;
+}
 .financial-aid-flag { color: #9f1239; background: #fff1f2; }
 .intake-wizard { gap: 22px; }
 .wizard-progress {

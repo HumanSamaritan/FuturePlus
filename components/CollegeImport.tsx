@@ -13,15 +13,15 @@ export default function CollegeImport({ programLevel }: { programLevel: ProgramL
   const [busy, setBusy] = useState(false);
   const isPostgraduate = programLevel === 'postgraduate';
   const institutionLabel = isPostgraduate ? 'university' : 'college';
-  const programmeLabel = isPostgraduate ? 'PG' : 'UG';
+  const programmeLabel = isPostgraduate ? 'Post Graduate' : 'Under Graduate';
 
   function downloadTemplate() {
     const csv = `${headers.map((cell) => `"${cell}"`).join(',')}\n`;
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     link.download = isPostgraduate
-      ? 'future-plus-pg-university-import-template.csv'
-      : 'future-plus-ug-college-import-template.csv';
+      ? 'future-plus-post-graduate-university-import-template.csv'
+      : 'future-plus-under-graduate-college-import-template.csv';
     link.click();
     URL.revokeObjectURL(link.href);
   }
@@ -67,7 +67,7 @@ export default function CollegeImport({ programLevel }: { programLevel: ProgramL
         setMessage(`Upload failed: ${result.error} Reference: ${result.importId}`);
         return;
       }
-      setMessage(`${result.updated} ${programmeLabel} row(s) verified. Opening the updated College Database...`);
+      setMessage(`${result.updated} ${programmeLabel} row(s) verified. Opening the updated Universities catalogue...`);
       window.location.assign(`/colleges?imported=${result.updated}&level=${programLevel}&refresh=${Date.now()}`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Import failed. Please check the template.');
@@ -83,7 +83,7 @@ export default function CollegeImport({ programLevel }: { programLevel: ProgramL
         <h2>{programmeLabel} bulk {institutionLabel} upload</h2>
         <p className="muted">
           Download the {programmeLabel} template, add one row for every {institutionLabel} and course in Excel or Google Sheets,
-          save as CSV, then upload it here. Every row is stored as {isPostgraduate ? 'Postgraduate' : 'Undergraduate'}.
+          save as CSV, then upload it here. Every row is stored as {isPostgraduate ? 'Post Graduate' : 'Under Graduate'}.
         </p>
       </div>
       <div className="actions">
