@@ -8,7 +8,6 @@ import { getCourseCatalog } from '@/lib/data';
 import { isAllowedUserEmail } from '@/lib/env';
 import { generateRecommendations } from '@/lib/recommendation';
 import { createClient } from '@/lib/supabase/server';
-import { StudentInput } from '@/lib/types';
 
 const StudentSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -176,12 +175,11 @@ export async function createStudentAction(formData: FormData) {
       throw new Error('Final graduation percentage is required for passed-out applicants and working professionals.');
     }
   }
-  const student: StudentInput = {
+  const student = {
     ...parsed,
     hostelRequired: parsed.hostelRequired === 'yes',
     loanRequired: parsed.loanRequired === 'yes',
     belowPovertyLine: parsed.belowPovertyLine === 'yes',
-    financialAidRequired: parsed.belowPovertyLine === 'yes',
     budgetMin: normaliseNumber(parsed.budgetMin),
     budgetMax: normaliseNumber(parsed.budgetMax),
     salaryExpectation: normaliseNumber(parsed.salaryExpectation),
@@ -220,7 +218,7 @@ export async function createStudentAction(formData: FormData) {
       hostel_required: student.hostelRequired,
       loan_required: student.loanRequired,
       below_poverty_line: student.belowPovertyLine,
-      financial_aid_required: student.financialAidRequired,
+      financial_aid_required: student.belowPovertyLine,
       passion: student.passion || null,
       purpose: student.purpose || null,
       strengths: student.strengths || null,

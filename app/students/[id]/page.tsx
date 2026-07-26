@@ -47,9 +47,12 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
           <p><strong>Board:</strong> {student.board || '-'}</p>
           <p><strong>Subjects:</strong> {student.subjects_interest?.join(', ') || '-'}</p>
           <p><strong>Locations:</strong> {student.preferred_locations?.join(', ') || '-'}</p>
-          <p><strong>Fee range:</strong> {student.budget_min || '-'} to {student.budget_max || '-'} INR</p>
+          <p><strong>Total course-cost range:</strong> {student.budget_min ? `₹${Number(student.budget_min).toLocaleString('en-IN')}` : '-'} to {student.budget_max ? `₹${Number(student.budget_max).toLocaleString('en-IN')}` : '-'}</p>
           <p><strong>Expected package:</strong> {student.salary_expectation || '-'} INR</p>
           <p><strong>Hostel required:</strong> {student.hostel_required ? 'Yes' : 'No'}</p>
+          <p><strong>Education loan required:</strong> {student.loan_required ? 'Yes' : 'No'}</p>
+          <p><strong>Below poverty line:</strong> {student.below_poverty_line ? 'Yes' : 'No'}</p>
+          <p><strong>Financial aid:</strong> {student.financial_aid_required ? <span className="financial-aid-flag">Required</span> : 'Not flagged'}</p>
           <p><strong>Support:</strong> {student.support_required?.join(', ') || '-'}</p>
         </div>
         <div className="card">
@@ -60,6 +63,20 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
           <p><strong>Constraints:</strong> {student.constraints || '-'}</p>
         </div>
       </div>
+
+      {student.desired_program_level === 'postgraduate' ? (
+        <div className="card">
+          <h2>Postgraduate applicant profile</h2>
+          <p><strong>Undergraduate degree:</strong> {student.undergraduate_degree || '-'} {student.undergraduate_specialisation ? `(${student.undergraduate_specialisation})` : ''}</p>
+          <p><strong>University:</strong> {student.undergraduate_university || '-'}</p>
+          <p><strong>Graduation year:</strong> {student.undergraduate_graduation_year || '-'}</p>
+          <p><strong>Applicant status:</strong> {student.pg_applicant_status?.replaceAll('_', ' ') || '-'}</p>
+          <p><strong>Final percentage:</strong> {student.undergraduate_final_percentage ?? '-'}%</p>
+          <p><strong>Semester results:</strong> {Object.entries(student.semester_marks || {}).map(([semester, marks]) => `${semester.replace('_', ' ')}: ${marks}%`).join(', ') || '-'}</p>
+          <p><strong>Employment:</strong> {[student.current_job_title, student.current_employer].filter(Boolean).join(' at ') || '-'}</p>
+          <p><strong>Experience:</strong> {student.work_experience_months ?? 0} months</p>
+        </div>
+      ) : null}
 
       <div className="card">
         <h2>Counselling summary</h2>

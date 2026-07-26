@@ -463,6 +463,82 @@ tr:hover td {
   background: var(--surface-2);
 }
 
+.programme-badge,
+.financial-aid-flag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: .78rem;
+  font-weight: 850;
+}
+.programme-badge { color: #4338ca; background: #eef2ff; }
+.financial-aid-flag { color: #9f1239; background: #fff1f2; }
+.intake-wizard { gap: 22px; }
+.wizard-progress {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #f8faff;
+}
+.wizard-step {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 9px;
+  border: 0;
+  border-radius: 11px;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 750;
+  text-align: left;
+}
+.wizard-step span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border-radius: 50%;
+  background: #e5e9f2;
+}
+.wizard-step.active { color: white; background: var(--primary); }
+.wizard-step.active span { color: var(--primary); background: white; }
+.wizard-step.complete { color: var(--primary-2); cursor: pointer; }
+.wizard-step.complete span { color: white; background: var(--primary-2); }
+.wizard-page .form-section { min-height: 350px; }
+.wizard-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.choice-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.choice-card {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+}
+.choice-card:hover { border-color: var(--primary-2); background: #f8faff; }
+.choice-card input { width: auto; accent-color: var(--primary-2); }
+.required-note { color: var(--danger); font-size: .78rem; font-weight: 700; }
+
 .score-pill {
   color: var(--primary);
   background: #eef2ff;
@@ -534,4 +610,6 @@ pre {
   .workspace-nav + main { margin-left: 0; padding: 20px 16px 48px; }
   .staff-identity { position: static; max-width: 100%; }
   .inline-edit-form { position: fixed; inset: 12px; width: auto; overflow-y: auto; grid-template-columns: 1fr; }
+  .wizard-progress { display: flex; overflow-x: auto; }
+  .wizard-step { flex: 0 0 auto; }
 }
