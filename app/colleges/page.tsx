@@ -58,9 +58,18 @@ export default async function CollegesPage({
             </thead>
             <tbody>
               {courses.map((course) => (
-                <tr key={course.course_id}>
+                <tr
+                  className={
+                    course.partner_status === 'preferred_partner'
+                      ? 'preferred-partner-row'
+                      : course.partner_status === 'pipeline_partner'
+                        ? 'pipeline-partner-row'
+                        : 'non-partner-row'
+                  }
+                  key={course.course_id}
+                >
                   <td><strong>{course.college_name}</strong></td>
-                  <td>{course.subject_area}<br /><span className="muted">{course.course_name}</span></td>
+                  <td>{course.subject_area}<br /><span className="muted">{course.course_name} · {course.program_level === 'postgraduate' ? 'PG' : 'UG'}</span></td>
                   <td>{course.duration || '-'}</td>
                   <td>{course.total_fee ? `${course.total_fee.toLocaleString('en-IN')} ${course.currency || 'INR'}` : 'Verify'}</td>
                   <td>{[course.city, course.state, course.country].filter(Boolean).join(', ')}</td>
@@ -72,7 +81,9 @@ export default async function CollegesPage({
                   </td>
                   <td>{course.hostel_available ? 'Yes' : 'No / verify'}</td>
                   <td>
-                    <span className="badge">{course.partner_status || 'non_partner'}</span><br />
+                    <span className={`partner-status partner-${course.partner_status || 'non_partner'}`}>
+                      {(course.partner_status || 'non_partner').replaceAll('_', ' ')}
+                    </span><br />
                     {course.commission_based ? 'Commission based' : 'No commission flag'}
                   </td>
                   <td>
@@ -83,6 +94,7 @@ export default async function CollegesPage({
                         <input type="hidden" name="courseId" value={course.course_id} />
                         <label>College<input name="collegeName" defaultValue={course.college_name} required /></label>
                         <label>Course<input name="courseName" defaultValue={course.course_name} required /></label>
+                        <label>Program level<select name="programLevel" defaultValue={course.program_level || 'undergraduate'}><option value="undergraduate">Undergraduate</option><option value="postgraduate">Postgraduate</option></select></label>
                         <label>Subject<input name="subjectArea" defaultValue={course.subject_area} required /></label>
                         <label>Duration<input name="duration" defaultValue={course.duration || ''} /></label>
                         <label>City<input name="city" defaultValue={course.city || ''} /></label>

@@ -79,7 +79,9 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
       ) : null}
 
       <div className="card">
-        <h2>Counselling summary</h2>
+        <span className="kicker">Gemini staff intelligence</span>
+        <h2>AI counselling and college-fit review</h2>
+        <p className="muted">Gemini reviews the database-grounded UG/PG shortlist. Staff should verify live university details before advising the student.</p>
         <pre>{student.ai_summary || 'No summary generated yet.'}</pre>
       </div>
 
@@ -104,6 +106,11 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
 
       <div className="table-card">
         <h2>College recommendations</h2>
+        <div className="partner-legend" aria-label="College partnership colour guide">
+          <span><i className="legend-swatch preferred" />Preferred partner</span>
+          <span><i className="legend-swatch pipeline" />Partner network / pipeline</span>
+          <span><i className="legend-swatch independent" />Non-partner</span>
+        </div>
         <div className="table-wrap">
           <table>
             <thead>
@@ -122,7 +129,16 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
               {(recommendations ?? []).map((rec) => {
                 const course = courseById.get(rec.course_id);
                 return (
-                  <tr key={rec.id}>
+                  <tr
+                    className={
+                      course?.partner_status === 'preferred_partner'
+                        ? 'recommendation-row preferred-partner-row'
+                        : course?.partner_status === 'pipeline_partner'
+                          ? 'recommendation-row pipeline-partner-row'
+                          : 'recommendation-row non-partner-row'
+                    }
+                    key={rec.id}
+                  >
                     <td>#{rec.rank}</td>
                     <td>
                       <strong>{course?.college_name || 'Unknown college'}</strong><br />
@@ -138,7 +154,12 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
                       High: {course?.highest_package ? course.highest_package.toLocaleString('en-IN') : '-'}
                     </td>
                     <td>{course?.hostel_available ? 'Yes' : 'No / verify'}</td>
-                    <td>{course?.partner_status || 'non_partner'}<br />{course?.commission_based ? 'Commission' : 'No commission flag'}</td>
+                    <td>
+                      <span className={`partner-status partner-${course?.partner_status || 'non_partner'}`}>
+                        {(course?.partner_status || 'non_partner').replaceAll('_', ' ')}
+                      </span>
+                      <br />{course?.commission_based ? 'Commission' : 'No commission flag'}
+                    </td>
                     <td><ScorePill score={rec.fit_score} /></td>
                   </tr>
                 );
