@@ -5,6 +5,13 @@ export const revalidate = 0;
 
 const programmes = ['MBA & PGDM', 'B.Tech', 'BBA & BCA', 'MBBS & BDS', 'Law', 'Study Abroad'];
 const cities = ['Pune', 'Bangalore', 'Delhi', 'Mumbai', 'Bhubaneswar', 'Hyderabad'];
+const whatsappMessage = encodeURIComponent(
+  'Hello Future Plus Education, I would like to speak with a counsellor about courses, colleges and admissions.'
+);
+const emailSubject = encodeURIComponent('Request to speak with a Future Plus counsellor');
+const emailBody = encodeURIComponent(
+  'Hello Future Plus Education,\n\nI would like to speak with a counsellor about courses, colleges and admissions.\n\nThank you.'
+);
 
 export default function HomePage() {
   return (
@@ -14,8 +21,30 @@ export default function HomePage() {
           <span className="kicker">Empowering futures since 2010</span>
           <h1>Your pathway to the right course, college and career.</h1>
           <p>Personalised counselling, transparent admissions support and access to trusted institutions across India and abroad.</p>
-          <div className="actions">
-            <a href="tel:+917008551071" className="primary-button">Talk to a counsellor</a>
+          <div className="actions contact-actions">
+            <a
+              href={`https://wa.me/917008551071?text=${whatsappMessage}`}
+              target="_blank"
+              rel="noreferrer"
+              className="contact-button whatsapp-button"
+              aria-label="Talk to a counsellor on WhatsApp"
+            >
+              <img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt="" aria-hidden="true" />
+              <span><small>WhatsApp</small>Talk to a counsellor</span>
+            </a>
+            <a
+              href={`mailto:enquiry@futureplusedus.com?subject=${emailSubject}&body=${emailBody}`}
+              className="contact-button email-button"
+            >
+              <span className="contact-icon" aria-hidden="true">@</span>
+              <span><small>Email</small>Talk to a counsellor</span>
+            </a>
+            <a href="tel:+917008551071" className="contact-button call-button">
+              <span className="contact-icon" aria-hidden="true">☎</span>
+              <span><small>Call</small>Call a counsellor</span>
+            </a>
+          </div>
+          <div className="actions hero-secondary-actions">
             <a href="#programmes" className="secondary-button">Explore programmes</a>
             <a href="https://futureplusedus.com/" target="_blank" rel="noreferrer" className="secondary-button">Visit Future Plus Website</a>
           </div>
@@ -26,7 +55,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="public-hero-image">
-          <img src="https://futureplusedus.com/wp-content/uploads/2024/10/home-about-2048x2048.webp" alt="Future Plus student counselling" />
+          <img src="/future-plus-pathway.webp" alt="Students celebrating their success on campus" />
           <div className="floating-proof">99% success-led guidance</div>
         </div>
       </section>
@@ -36,7 +65,13 @@ export default function HomePage() {
           <span className="kicker">About Future Plus Education</span>
           <h2>Guidance that turns ambition into a practical admissions plan.</h2>
         </div>
-        <p>Since 2010, Future Plus has helped students make informed decisions through one-to-one counselling, course discovery, applications, education-loan support and strong institutional partnerships.</p>
+        <div>
+          <p>Since 2010, Future Plus has helped students make informed decisions through one-to-one counselling, course discovery, applications, education-loan support and strong institutional partnerships.</p>
+          <div className="future-plus-photo-grid">
+            <img src="/future-plus-counselling-event.webp" alt="Future Plus education counselling event" />
+            <img src="/future-plus-student-guidance.webp" alt="Students receiving university guidance at a Future Plus event" />
+          </div>
+        </div>
       </section>
 
       <section id="programmes" className="public-section">
