@@ -22,9 +22,25 @@ export type CourseWithCollege = {
   poc_name: string | null;
   poc_email: string | null;
   next_review_at: string | null;
+  program_level: 'undergraduate' | 'postgraduate' | string;
 };
 
-export type StudentInput = {
+export type PostgraduateStudentFields = {
+  programLevel?: 'undergraduate' | 'postgraduate';
+  undergraduateDegree?: string;
+  undergraduateSpecialisation?: string;
+  undergraduateUniversity?: string;
+  undergraduateGraduationYear?: number | null;
+  pgApplicantStatus?: 'final_semester' | 'passed_out' | 'working_professional';
+  semestersCompleted?: number | null;
+  semesterMarks?: Record<string, number>;
+  undergraduateFinalPercentage?: number | null;
+  currentEmployer?: string;
+  currentJobTitle?: string;
+  workExperienceMonths?: number | null;
+};
+
+export type StudentInput = PostgraduateStudentFields & {
   id?: string;
   firstName: string;
   lastName: string;
