@@ -240,7 +240,11 @@ export async function createStudentAction(formData: FormData) {
 
   if (insertError) throw new Error(insertError.message);
 
-  const courses = await getCourseCatalog(student.programLevel || 'undergraduate');
+  const allCourses = await getCourseCatalog();
+  const requestedProgramLevel = student.programLevel || 'undergraduate';
+  const courses = allCourses.filter(
+    (course) => (course.program_level || 'undergraduate') === requestedProgramLevel
+  );
   const recommendations = generateRecommendations({ ...student, id: insertedStudent.id }, courses);
   const summary = await generateCounsellingSummary({ ...student, id: insertedStudent.id }, courses, recommendations);
 
