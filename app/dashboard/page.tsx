@@ -13,7 +13,7 @@ export default async function DashboardPage() {
     supabase.from('courses').select('*', { count: 'exact', head: true }),
     supabase
       .from('students')
-      .select('id, first_name, last_name, email, status, score, future_plus_id, created_at, subjects_interest, desired_program_level, created_by, assigned_staff_name, assigned_staff_email')
+      .select('id, first_name, last_name, email, status, score, future_plus_id, created_at, subjects_interest, desired_program_level, financial_aid_required, created_by, assigned_staff_name, assigned_staff_email')
       .order('created_at', { ascending: false })
       .limit(12)
   ]);
@@ -73,10 +73,12 @@ export default async function DashboardPage() {
             <thead>
               <tr>
                 <th>Student</th>
+                <th>UG/PG</th>
                 <th>Subjects</th>
                 <th>Status</th>
                 <th>Future Plus ID</th>
                 <th>Managing Staff</th>
+                <th>Financial Aid</th>
                 <th>Score</th>
               </tr>
             </thead>
@@ -89,8 +91,9 @@ export default async function DashboardPage() {
                 <tr key={student.id}>
                   <td>
                     <Link href={`/students/${student.id}`}><strong>{student.first_name} {student.last_name}</strong></Link>
-                    <br /><span className="muted">{student.email || 'No email captured'} · {student.desired_program_level === 'postgraduate' ? 'PG' : 'UG'}</span>
+                    <br /><span className="muted">{student.email || 'No email captured'}</span>
                   </td>
+                  <td><span className="programme-badge">{student.desired_program_level === 'postgraduate' ? 'PG' : 'UG'}</span></td>
                   <td>{student.subjects_interest?.join(', ') || '-'}</td>
                   <td><span className="badge">{student.status}</span></td>
                   <td>{student.future_plus_id || '-'}</td>
@@ -98,12 +101,13 @@ export default async function DashboardPage() {
                     <strong>{managingStaffName}</strong><br />
                     <span className="muted">{managingStaffEmail}</span>
                   </td>
+                  <td>{student.financial_aid_required ? <span className="financial-aid-flag">Required</span> : '-'}</td>
                   <td><ScorePill score={student.score} /></td>
                 </tr>
                 );
               })}
               {!students?.length ? (
-                <tr><td colSpan={6}>No student records yet. Create the first student intake.</td></tr>
+                <tr><td colSpan={8}>No student records yet. Create the first student intake.</td></tr>
               ) : null}
             </tbody>
           </table>

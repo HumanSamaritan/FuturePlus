@@ -29,7 +29,9 @@ const StudentSchema = z.object({
   budgetMin: z.coerce.number().optional().nullable(),
   budgetMax: z.coerce.number().optional().nullable(),
   salaryExpectation: z.coerce.number().optional().nullable(),
-  hostelRequired: z.coerce.boolean().default(false),
+  hostelRequired: z.enum(['yes', 'no']),
+  loanRequired: z.enum(['yes', 'no']),
+  belowPovertyLine: z.enum(['yes', 'no']),
   passion: z.string().optional(),
   purpose: z.string().optional(),
   strengths: z.string().optional(),
@@ -114,7 +116,9 @@ export async function createStudentAction(formData: FormData) {
     budgetMin: formData.get('budgetMin') || undefined,
     budgetMax: formData.get('budgetMax') || undefined,
     salaryExpectation: formData.get('salaryExpectation') || undefined,
-    hostelRequired: formData.get('hostelRequired') === 'on',
+    hostelRequired: formData.get('hostelRequired'),
+    loanRequired: formData.get('loanRequired'),
+    belowPovertyLine: formData.get('belowPovertyLine'),
     passion: formData.get('passion') || undefined,
     purpose: formData.get('purpose') || undefined,
     strengths: formData.get('strengths') || undefined,
@@ -146,6 +150,12 @@ export async function createStudentAction(formData: FormData) {
     currentJobTitle: formData.get('currentJobTitle') || undefined,
     workExperienceMonths: formData.get('workExperienceMonths') || undefined
   });
+  if (parsed.budgetMin == null || parsed.budgetMax == null) {
+    throw new Error('Select the minimum and maximum total course-cost budget.');
+  }
+  if (parsed.budgetMin > parsed.budgetMax) {
+    throw new Error('Minimum total course cost cannot be higher than the maximum.');
+  }
 
   const semesterMarks: Record<string, number> = {};
   for (let semester = 1; semester <= 12; semester += 1) {
@@ -168,6 +178,10 @@ export async function createStudentAction(formData: FormData) {
   }
   const student: StudentInput = {
     ...parsed,
+    hostelRequired: parsed.hostelRequired === 'yes',
+    loanRequired: parsed.loanRequired === 'yes',
+    belowPovertyLine: parsed.belowPovertyLine === 'yes',
+    financialAidRequired: parsed.belowPovertyLine === 'yes',
     budgetMin: normaliseNumber(parsed.budgetMin),
     budgetMax: normaliseNumber(parsed.budgetMax),
     salaryExpectation: normaliseNumber(parsed.salaryExpectation),
@@ -204,6 +218,9 @@ export async function createStudentAction(formData: FormData) {
       budget_max: student.budgetMax,
       salary_expectation: student.salaryExpectation,
       hostel_required: student.hostelRequired,
+      loan_required: student.loanRequired,
+      below_poverty_line: student.belowPovertyLine,
+      financial_aid_required: student.financialAidRequired,
       passion: student.passion || null,
       purpose: student.purpose || null,
       strengths: student.strengths || null,

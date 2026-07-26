@@ -1,5 +1,5 @@
-import SubmitButton from '@/components/SubmitButton';
-import { DEFAULT_SUBJECT_AREAS, INDIA_STATES_AND_REGIONS, SUPPORT_OPTIONS } from '@/lib/constants';
+import StudentIntakeWizard from '@/components/StudentIntakeWizard';
+import { DEFAULT_SUBJECT_AREAS, INDIA_STATES_AND_REGIONS, SUPPORT_OPTIONS, TOTAL_COST_BUDGET_OPTIONS } from '@/lib/constants';
 import { getSubjectAreas } from '@/lib/data';
 import { createStudentAction } from '../actions';
 
@@ -20,7 +20,12 @@ export default async function NewStudentPage() {
         Capture the student requirement once. The system will store the record in Supabase and generate a first-pass recommendation score.
       </p>
 
-      <form action={createStudentAction}>
+      <StudentIntakeWizard
+        action={createStudentAction}
+        programLevel="undergraduate"
+        stepLabels={['Student', 'Preferences', 'Budget & support', 'Profile', 'Notes']}
+        submitLabel="Save Student and Generate Recommendations"
+      >
         <div className="form-section">
           <h2>1. Student basics</h2>
           <div className="grid grid-2">
@@ -94,20 +99,49 @@ export default async function NewStudentPage() {
           <h2>3. Commercial and support requirements</h2>
           <div className="grid grid-3">
             <div className="field">
-              <label htmlFor="budgetMin">Minimum fee budget, INR</label>
-              <input id="budgetMin" name="budgetMin" type="number" min="0" step="1000" />
+              <label htmlFor="budgetMin">Minimum total course cost</label>
+              <select id="budgetMin" name="budgetMin" defaultValue="" required>
+                <option value="" disabled>Select minimum budget</option>
+                {TOTAL_COST_BUDGET_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+              <span className="help-text">Overall programme cost, not per semester or year.</span>
             </div>
             <div className="field">
-              <label htmlFor="budgetMax">Maximum fee budget, INR</label>
-              <input id="budgetMax" name="budgetMax" type="number" min="0" step="1000" />
+              <label htmlFor="budgetMax">Maximum total course cost</label>
+              <select id="budgetMax" name="budgetMax" defaultValue="" required>
+                <option value="" disabled>Select maximum budget</option>
+                {TOTAL_COST_BUDGET_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+              <span className="help-text">Saved in the database as a numeric INR amount.</span>
             </div>
             <div className="field">
               <label htmlFor="salaryExpectation">Expected package, INR</label>
               <input id="salaryExpectation" name="salaryExpectation" type="number" min="0" step="1000" />
             </div>
           </div>
-          <div className="field">
-            <label><input type="checkbox" name="hostelRequired" /> Hostel facility required</label>
+          <div className="grid grid-3 support-questions">
+            <div className="field">
+              <label>Does the student require hostel facilities? *</label>
+              <div className="choice-group">
+                <label className="choice-card"><input type="radio" name="hostelRequired" value="yes" required /> Yes</label>
+                <label className="choice-card"><input type="radio" name="hostelRequired" value="no" required /> No</label>
+              </div>
+            </div>
+            <div className="field">
+              <label>Does the student require an education loan? *</label>
+              <div className="choice-group">
+                <label className="choice-card"><input type="radio" name="loanRequired" value="yes" required /> Yes</label>
+                <label className="choice-card"><input type="radio" name="loanRequired" value="no" required /> No</label>
+              </div>
+            </div>
+            <div className="field">
+              <label>Is the student from a below-poverty-line household? *</label>
+              <div className="choice-group">
+                <label className="choice-card"><input type="radio" name="belowPovertyLine" value="yes" required /> Yes</label>
+                <label className="choice-card"><input type="radio" name="belowPovertyLine" value="no" required /> No</label>
+              </div>
+              <span className="help-text">Selecting Yes automatically flags Financial Aid Required.</span>
+            </div>
           </div>
           <div className="field">
             <label htmlFor="supportRequired">Future Plus support required</label>
@@ -162,8 +196,7 @@ export default async function NewStudentPage() {
           </div>
         </div>
 
-        <SubmitButton>Save Student and Generate Recommendations</SubmitButton>
-      </form>
+      </StudentIntakeWizard>
     </section>
   );
 }

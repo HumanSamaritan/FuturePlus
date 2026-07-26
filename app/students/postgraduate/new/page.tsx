@@ -1,5 +1,5 @@
-import SubmitButton from '@/components/SubmitButton';
-import { INDIA_STATES_AND_REGIONS, SUPPORT_OPTIONS } from '@/lib/constants';
+import StudentIntakeWizard from '@/components/StudentIntakeWizard';
+import { INDIA_STATES_AND_REGIONS, SUPPORT_OPTIONS, TOTAL_COST_BUDGET_OPTIONS } from '@/lib/constants';
 import { createStudentAction } from '../../actions';
 
 const PG_INTERESTS = [
@@ -23,8 +23,12 @@ export default function NewPostgraduateStudentPage() {
       <h1>Postgraduate counselling form</h1>
       <p className="muted">Capture graduation progress, semester results, final marks and professional experience for postgraduate counselling.</p>
 
-      <form action={createStudentAction}>
-        <input type="hidden" name="programLevel" value="postgraduate" />
+      <StudentIntakeWizard
+        action={createStudentAction}
+        programLevel="postgraduate"
+        stepLabels={['Applicant', 'Academics', 'Semester marks', 'Experience', 'Preferences', 'Goals']}
+        submitLabel="Save PG Student and Generate Recommendations"
+      >
 
         <div className="form-section">
           <h2>1. Applicant details</h2>
@@ -93,10 +97,47 @@ export default function NewPostgraduateStudentPage() {
             <div className="field"><label htmlFor="preferredLocations">Preferred locations</label><select id="preferredLocations" name="preferredLocations" multiple>{INDIA_STATES_AND_REGIONS.map((item) => <option key={item}>{item}</option>)}</select></div>
             <div className="field"><label htmlFor="targetIntake">Target intake</label><input id="targetIntake" name="targetIntake" placeholder="2027 July" /></div>
             <div className="field"><label htmlFor="salaryExpectation">Expected package, INR</label><input id="salaryExpectation" name="salaryExpectation" type="number" min="0" /></div>
-            <div className="field"><label htmlFor="budgetMin">Minimum budget, INR</label><input id="budgetMin" name="budgetMin" type="number" min="0" /></div>
-            <div className="field"><label htmlFor="budgetMax">Maximum budget, INR</label><input id="budgetMax" name="budgetMax" type="number" min="0" /></div>
+            <div className="field">
+              <label htmlFor="budgetMin">Minimum total course cost</label>
+              <select id="budgetMin" name="budgetMin" defaultValue="" required>
+                <option value="" disabled>Select minimum budget</option>
+                {TOTAL_COST_BUDGET_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+              <span className="help-text">Overall PG programme cost, not per semester or year.</span>
+            </div>
+            <div className="field">
+              <label htmlFor="budgetMax">Maximum total course cost</label>
+              <select id="budgetMax" name="budgetMax" defaultValue="" required>
+                <option value="" disabled>Select maximum budget</option>
+                {TOTAL_COST_BUDGET_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+              <span className="help-text">Saved in the database as a numeric INR amount.</span>
+            </div>
           </div>
-          <label><input type="checkbox" name="hostelRequired" /> Hostel facility required</label>
+          <div className="grid grid-3 support-questions">
+            <div className="field">
+              <label>Does the student require hostel facilities? *</label>
+              <div className="choice-group">
+                <label className="choice-card"><input type="radio" name="hostelRequired" value="yes" required /> Yes</label>
+                <label className="choice-card"><input type="radio" name="hostelRequired" value="no" required /> No</label>
+              </div>
+            </div>
+            <div className="field">
+              <label>Does the student require an education loan? *</label>
+              <div className="choice-group">
+                <label className="choice-card"><input type="radio" name="loanRequired" value="yes" required /> Yes</label>
+                <label className="choice-card"><input type="radio" name="loanRequired" value="no" required /> No</label>
+              </div>
+            </div>
+            <div className="field">
+              <label>Is the student from a below-poverty-line household? *</label>
+              <div className="choice-group">
+                <label className="choice-card"><input type="radio" name="belowPovertyLine" value="yes" required /> Yes</label>
+                <label className="choice-card"><input type="radio" name="belowPovertyLine" value="no" required /> No</label>
+              </div>
+              <span className="help-text">Selecting Yes automatically flags Financial Aid Required.</span>
+            </div>
+          </div>
           <div className="field"><label htmlFor="supportRequired">Future Plus support required</label><select id="supportRequired" name="supportRequired" multiple>{SUPPORT_OPTIONS.map((item) => <option key={item}>{item}</option>)}</select></div>
         </div>
 
@@ -114,8 +155,7 @@ export default function NewPostgraduateStudentPage() {
           </div>
         </div>
 
-        <SubmitButton>Save PG Student and Generate Recommendations</SubmitButton>
-      </form>
+      </StudentIntakeWizard>
     </section>
   );
 }
