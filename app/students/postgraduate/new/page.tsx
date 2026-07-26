@@ -1,6 +1,20 @@
 import StudentIntakeWizard from '@/components/StudentIntakeWizard';
-import { INDIA_STATES_AND_REGIONS, SUPPORT_OPTIONS, TOTAL_COST_BUDGET_OPTIONS } from '@/lib/constants';
+import { INDIA_STATES_AND_REGIONS, SUPPORT_OPTIONS } from '@/lib/constants';
 import { createStudentAction } from '../../actions';
+
+const TOTAL_COST_BUDGET_OPTIONS = [
+  [200000, 'INR 2 Lakhs'],
+  [500000, 'INR 5 Lakhs'],
+  [1000000, 'INR 10 Lakhs'],
+  [1500000, 'INR 15 Lakhs'],
+  [2000000, 'INR 20 Lakhs'],
+  [2500000, 'INR 25 Lakhs'],
+  [3000000, 'INR 30 Lakhs'],
+  [4000000, 'INR 40 Lakhs'],
+  [5000000, 'INR 50 Lakhs'],
+  [7500000, 'INR 75 Lakhs'],
+  [10000000, 'INR 1 Crore']
+] as const;
 
 const PG_INTERESTS = [
   ['Management', 'Business Administration / MBA'],
@@ -101,7 +115,7 @@ export default function NewPostgraduateStudentPage() {
               <label htmlFor="budgetMin">Minimum total course cost</label>
               <select id="budgetMin" name="budgetMin" defaultValue="" required>
                 <option value="" disabled>Select minimum budget</option>
-                {TOTAL_COST_BUDGET_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                {TOTAL_COST_BUDGET_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
               <span className="help-text">Overall PG programme cost, not per semester or year.</span>
             </div>
@@ -109,7 +123,7 @@ export default function NewPostgraduateStudentPage() {
               <label htmlFor="budgetMax">Maximum total course cost</label>
               <select id="budgetMax" name="budgetMax" defaultValue="" required>
                 <option value="" disabled>Select maximum budget</option>
-                {TOTAL_COST_BUDGET_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                {TOTAL_COST_BUDGET_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
               <span className="help-text">Saved in the database as a numeric INR amount.</span>
             </div>
