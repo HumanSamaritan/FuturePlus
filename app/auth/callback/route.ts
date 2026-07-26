@@ -38,6 +38,12 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      const { error: accessError } = await supabase.rpc('sync_my_profile_access');
+      if (accessError) {
+        const loginUrl = new URL('/login', requestUrl.origin);
+        loginUrl.searchParams.set('error', `This Google account is not configured for Staff or Super User access.`);
+        return NextResponse.redirect(loginUrl);
+      }
       return response;
     }
 

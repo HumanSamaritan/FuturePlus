@@ -15,13 +15,15 @@ export default async function Header() {
   const isStaff = pathname !== '/' && Boolean(user && isAllowedUserEmail(user.email));
   let staffName = '';
   let staffEmail = '';
+  let staffRole = 'Staff';
   if (isStaff && user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('full_name,email')
+      .select('full_name,email,role')
       .eq('id', user.id)
       .maybeSingle();
     staffEmail = profile?.email || user.email || '';
+    staffRole = profile?.role === 'admin' ? 'Super User' : 'Staff';
     staffName =
       profile?.full_name ||
       user.user_metadata?.full_name ||
@@ -50,7 +52,8 @@ export default async function Header() {
         {isStaff ? (
           <>
             <Link href="/dashboard">← Dashboard</Link>
-            <Link href="/students/new">＋ Student intake</Link>
+            <Link href="/students/new">＋ UG intake</Link>
+            <Link href="/students/postgraduate/new">＋ PG intake</Link>
             <Link href="/colleges">▦ College database</Link>
             <Link href="/admin">⇧ Imports & admin</Link>
             <a href="https://futureplusedus.com/" target="_blank" rel="noreferrer">↗ Public website</a>
@@ -71,7 +74,7 @@ export default async function Header() {
       {isStaff ? (
         <div className="staff-identity" aria-label="Signed-in staff member">
           <span className="staff-avatar">{staffName.slice(0, 1).toUpperCase()}</span>
-          <span><strong>Welcome, {staffName}</strong><small>{staffEmail}</small></span>
+          <span><strong>Welcome, {staffName}</strong><small>{staffRole} · {staffEmail}</small></span>
         </div>
       ) : null}
     </header>

@@ -13,7 +13,7 @@ export default async function DashboardPage() {
     supabase.from('courses').select('*', { count: 'exact', head: true }),
     supabase
       .from('students')
-      .select('id, first_name, last_name, email, status, score, future_plus_id, created_at, subjects_interest, created_by, assigned_staff_name, assigned_staff_email')
+      .select('id, first_name, last_name, email, status, score, future_plus_id, created_at, subjects_interest, desired_program_level, created_by, assigned_staff_name, assigned_staff_email')
       .order('created_at', { ascending: false })
       .limit(12)
   ]);
@@ -30,7 +30,7 @@ export default async function DashboardPage() {
     : { data: [] };
   const profileById = new Map((creatorProfiles ?? []).map((profile) => [profile.id, profile]));
   const { data: currentProfile } = user
-    ? await supabase.from('profiles').select('full_name,email').eq('id', user.id).maybeSingle()
+    ? await supabase.from('profiles').select('full_name,email,role').eq('id', user.id).maybeSingle()
     : { data: null };
   const staffEmail = currentProfile?.email || user?.email || '';
   const staffName =
@@ -39,6 +39,7 @@ export default async function DashboardPage() {
     user?.user_metadata?.name ||
     staffEmail.split('@')[0] ||
     'Future Plus Staff';
+  const roleLabel = currentProfile?.role === 'admin' ? 'Super User · all staff data' : 'Staff · your leads only';
 
   const onboarded = (students ?? []).filter((student) => ['admitted', 'onboarded'].includes(student.status)).length;
 
@@ -47,11 +48,13 @@ export default async function DashboardPage() {
       <div className="card">
         <span className="kicker">Future Plus organiser workspace</span>
         <h1>Welcome, {staffName}. Here’s your counselling pipeline.</h1>
+        <p className="badge">{roleLabel}</p>
         <p className="muted">
           Manage student profiles, institutional relationships, recommendations and annual data reviews from one place.
         </p>
         <div className="actions">
-          <Link href="/students/new" className="primary-button">Create Student Intake</Link>
+          <Link href="/students/new" className="primary-button">Create UG Intake</Link>
+          <Link href="/students/postgraduate/new" className="primary-button">Create PG Intake</Link>
           <Link href="/admin" className="secondary-button">Add College / Course</Link>
         </div>
       </div>
@@ -86,7 +89,7 @@ export default async function DashboardPage() {
                 <tr key={student.id}>
                   <td>
                     <Link href={`/students/${student.id}`}><strong>{student.first_name} {student.last_name}</strong></Link>
-                    <br /><span className="muted">{student.email || 'No email captured'}</span>
+                    <br /><span className="muted">{student.email || 'No email captured'} · {student.desired_program_level === 'postgraduate' ? 'PG' : 'UG'}</span>
                   </td>
                   <td>{student.subjects_interest?.join(', ') || '-'}</td>
                   <td><span className="badge">{student.status}</span></td>

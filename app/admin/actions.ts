@@ -24,7 +24,8 @@ const CollegeCourseSchema = z.object({
   placementCount: z.coerce.number().int().optional(),
   highestPackage: z.coerce.number().optional(),
   averagePackage: z.coerce.number().optional(),
-  currency: z.string().default('INR')
+  currency: z.string().default('INR'),
+  programLevel: z.enum(['undergraduate', 'postgraduate']).default('undergraduate')
 });
 
 function safeNumber(value: number | undefined) {
@@ -57,7 +58,8 @@ export async function addCollegeCourseAction(formData: FormData) {
     placementCount: formData.get('placementCount') || undefined,
     highestPackage: formData.get('highestPackage') || undefined,
     averagePackage: formData.get('averagePackage') || undefined,
-    currency: formData.get('currency') || 'INR'
+    currency: formData.get('currency') || 'INR',
+    programLevel: formData.get('programLevel') || 'undergraduate'
   });
 
   const { data: college, error: collegeError } = await supabase
@@ -92,7 +94,8 @@ export async function addCollegeCourseAction(formData: FormData) {
     placement_count: safeNumber(parsed.placementCount),
     highest_package: safeNumber(parsed.highestPackage),
     average_package: safeNumber(parsed.averagePackage),
-    currency: parsed.currency
+    currency: parsed.currency,
+    program_level: parsed.programLevel
   });
 
   if (courseError) throw new Error(courseError.message);
@@ -126,7 +129,8 @@ export async function updateCollegeCourseAction(formData: FormData) {
     placementCount: formData.get('placementCount') || undefined,
     highestPackage: formData.get('highestPackage') || undefined,
     averagePackage: formData.get('averagePackage') || undefined,
-    currency: formData.get('currency') || 'INR'
+    currency: formData.get('currency') || 'INR',
+    programLevel: formData.get('programLevel') || 'undergraduate'
   });
 
   const { error: collegeError } = await supabase.from('colleges').update({
@@ -152,7 +156,8 @@ export async function updateCollegeCourseAction(formData: FormData) {
     placement_count: safeNumber(parsed.placementCount),
     highest_package: safeNumber(parsed.highestPackage),
     average_package: safeNumber(parsed.averagePackage),
-    currency: parsed.currency
+    currency: parsed.currency,
+    program_level: parsed.programLevel
   }).eq('id', courseId).eq('college_id', collegeId);
   if (courseError) throw new Error(courseError.message);
 
@@ -210,6 +215,10 @@ const ImportRowSchema = z.object({
   commission_based: z.union([z.boolean(), z.string()]).optional(),
   hostel_available: z.union([z.boolean(), z.string()]).optional(),
   source_url: z.preprocess((value) => String(value || '').trim(), z.string().url().optional().or(z.literal(''))),
+  program_level: z.preprocess(
+    (value) => String(value || 'undergraduate').trim().toLowerCase(),
+    z.enum(['undergraduate', 'postgraduate'])
+  ),
   course_name: z.string().trim().min(1),
   subject_area: z.string().trim().min(1),
   duration: optionalText,
@@ -276,7 +285,8 @@ async function importCollegeRows(rows: unknown[]) {
         placement_count: nullableNumber(row.placement_count),
         highest_package: nullableNumber(row.highest_package),
         average_package: nullableNumber(row.average_package),
-        currency: row.currency || 'INR'
+        currency: row.currency || 'INR',
+        program_level: row.program_level
       },
       { onConflict: 'college_id,course_name' }
     ).select('id').single();

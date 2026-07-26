@@ -48,7 +48,18 @@ const StudentSchema = z.object({
   certifications: z.string().optional(),
   languages: z.string().optional(),
   workExperience: z.string().optional(),
-  careerGoals: z.string().optional()
+  careerGoals: z.string().optional(),
+  programLevel: z.enum(['undergraduate', 'postgraduate']).default('undergraduate'),
+  undergraduateDegree: z.string().optional(),
+  undergraduateSpecialisation: z.string().optional(),
+  undergraduateUniversity: z.string().optional(),
+  undergraduateGraduationYear: z.coerce.number().int().min(1950).max(2100).optional().nullable(),
+  pgApplicantStatus: z.enum(['final_semester', 'passed_out', 'working_professional']).optional(),
+  semestersCompleted: z.coerce.number().int().min(1).max(12).optional().nullable(),
+  undergraduateFinalPercentage: z.coerce.number().min(0).max(100).optional().nullable(),
+  currentEmployer: z.string().optional(),
+  currentJobTitle: z.string().optional(),
+  workExperienceMonths: z.coerce.number().int().min(0).optional().nullable()
 });
 
 function getMulti(formData: FormData, key: string) {
@@ -122,14 +133,49 @@ export async function createStudentAction(formData: FormData) {
     certifications: formData.get('certifications') || undefined,
     languages: formData.get('languages') || undefined,
     workExperience: formData.get('workExperience') || undefined,
-    careerGoals: formData.get('careerGoals') || undefined
+    careerGoals: formData.get('careerGoals') || undefined,
+    programLevel: formData.get('programLevel') || 'undergraduate',
+    undergraduateDegree: formData.get('undergraduateDegree') || undefined,
+    undergraduateSpecialisation: formData.get('undergraduateSpecialisation') || undefined,
+    undergraduateUniversity: formData.get('undergraduateUniversity') || undefined,
+    undergraduateGraduationYear: formData.get('undergraduateGraduationYear') || undefined,
+    pgApplicantStatus: formData.get('pgApplicantStatus') || undefined,
+    semestersCompleted: formData.get('semestersCompleted') || undefined,
+    undergraduateFinalPercentage: formData.get('undergraduateFinalPercentage') || undefined,
+    currentEmployer: formData.get('currentEmployer') || undefined,
+    currentJobTitle: formData.get('currentJobTitle') || undefined,
+    workExperienceMonths: formData.get('workExperienceMonths') || undefined
   });
 
+  const semesterMarks: Record<string, number> = {};
+  for (let semester = 1; semester <= 12; semester += 1) {
+    const value = formData.get(`semester${semester}Marks`);
+    if (value) semesterMarks[`semester_${semester}`] = Number(value);
+  }
+  if (parsed.programLevel === 'postgraduate') {
+    if (!parsed.undergraduateDegree || !parsed.undergraduateUniversity || !parsed.pgApplicantStatus) {
+      throw new Error('Undergraduate degree, university and applicant status are required for PG intake.');
+    }
+    if (parsed.pgApplicantStatus === 'final_semester' && !Object.keys(semesterMarks).length) {
+      throw new Error('Enter all available semester percentage results for a final-semester applicant.');
+    }
+    if (
+      ['passed_out', 'working_professional'].includes(parsed.pgApplicantStatus) &&
+      parsed.undergraduateFinalPercentage == null
+    ) {
+      throw new Error('Final graduation percentage is required for passed-out applicants and working professionals.');
+    }
+  }
   const student: StudentInput = {
     ...parsed,
     budgetMin: normaliseNumber(parsed.budgetMin),
     budgetMax: normaliseNumber(parsed.budgetMax),
-    salaryExpectation: normaliseNumber(parsed.salaryExpectation)
+    salaryExpectation: normaliseNumber(parsed.salaryExpectation),
+    undergraduateGraduationYear: normaliseNumber(parsed.undergraduateGraduationYear),
+    semestersCompleted: normaliseNumber(parsed.semestersCompleted),
+    undergraduateFinalPercentage: normaliseNumber(parsed.undergraduateFinalPercentage),
+    workExperienceMonths: normaliseNumber(parsed.workExperienceMonths),
+    semesterMarks
   };
 
   const { data: insertedStudent, error: insertError } = await supabase
@@ -150,7 +196,7 @@ export async function createStudentAction(formData: FormData) {
       city: student.city || null,
       state: student.state || null,
       country: student.country || 'India',
-      desired_program_level: 'undergraduate',
+      desired_program_level: student.programLevel || 'undergraduate',
       target_intake: student.targetIntake || null,
       subjects_interest: student.subjectsInterest,
       preferred_locations: student.preferredLocations,
@@ -176,14 +222,25 @@ export async function createStudentAction(formData: FormData) {
       certifications: student.certifications || null,
       languages: student.languages || null,
       work_experience: student.workExperience || null,
-      career_goals: student.careerGoals || null
+      career_goals: student.careerGoals || null,
+      undergraduate_degree: student.undergraduateDegree || null,
+      undergraduate_specialisation: student.undergraduateSpecialisation || null,
+      undergraduate_university: student.undergraduateUniversity || null,
+      undergraduate_graduation_year: student.undergraduateGraduationYear,
+      pg_applicant_status: student.pgApplicantStatus || null,
+      semesters_completed: student.semestersCompleted,
+      semester_marks: student.semesterMarks || {},
+      undergraduate_final_percentage: student.undergraduateFinalPercentage,
+      current_employer: student.currentEmployer || null,
+      current_job_title: student.currentJobTitle || null,
+      work_experience_months: student.workExperienceMonths
     })
     .select('*')
     .single();
 
   if (insertError) throw new Error(insertError.message);
 
-  const courses = await getCourseCatalog();
+  const courses = await getCourseCatalog(student.programLevel || 'undergraduate');
   const recommendations = generateRecommendations({ ...student, id: insertedStudent.id }, courses);
   const summary = await generateCounsellingSummary({ ...student, id: insertedStudent.id }, courses, recommendations);
 
