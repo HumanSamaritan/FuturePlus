@@ -11,7 +11,11 @@ export async function generateCounsellingSummary(
   recommendations: RecommendationResult[]
 ) {
   const geminiKey = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const configuredModel = (process.env.GEMINI_MODEL || 'gemini-2.5-flash')
+    .trim()
+    .replace(/^['"]|['"]$/g, '')
+    .replace(/^models\//i, '');
+  const modelCandidates = [...new Set([configuredModel, 'gemini-2.5-flash'])];
   const programmeLabel = student.programLevel === 'postgraduate' ? 'PG' : 'UG';
 
   const shortlistedColleges = recommendations.map((rec) => {
@@ -67,41 +71,47 @@ Database-grounded shortlist:
 ${JSON.stringify(shortlistedColleges, null, 2)}`;
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': geminiKey
-        },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 4096 }
-        })
-      }
-    );
+    for (const model of modelCandidates) {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': geminiKey
+          },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: 4096 }
+          })
+        }
+      );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[gemini] counselling review failed', {
-        status: response.status,
-        response: errorText.slice(0, 500)
-      });
-      return `Gemini counselling review could not be generated (HTTP ${response.status}). The verified college-fit table below is still available for staff review.`;
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[gemini] counselling review failed', {
+          model,
+          status: response.status,
+          response: errorText.slice(0, 500)
+        });
+        if (response.status === 404 && model !== modelCandidates.at(-1)) continue;
+        return `Gemini counselling review could not be generated (HTTP ${response.status}, model ${model}). The verified college-fit table below is still available for staff review.`;
+      }
+
+      const data = await response.json() as GeminiResponse;
+      const text = data.candidates?.[0]?.content?.parts
+        ?.map((part) => part.text || '')
+        .join('')
+        .trim();
+
+      if (text) return text;
+
+      return data.promptFeedback?.blockReason
+        ? `Gemini did not generate the counselling review (${data.promptFeedback.blockReason}). Use the verified college-fit table below.`
+        : 'Gemini returned an empty counselling review. Use the verified college-fit table below.';
     }
 
-    const data = await response.json() as GeminiResponse;
-    const text = data.candidates?.[0]?.content?.parts
-      ?.map((part) => part.text || '')
-      .join('')
-      .trim();
-
-    if (text) return text;
-
-    return data.promptFeedback?.blockReason
-      ? `Gemini did not generate the counselling review (${data.promptFeedback.blockReason}). Use the verified college-fit table below.`
-      : 'Gemini returned an empty counselling review. Use the verified college-fit table below.';
+    return 'Gemini counselling review could not be generated because no configured model was available.';
   } catch (error) {
     console.error('[gemini] counselling review request error', error);
     return 'Gemini counselling review could not be reached. The verified college-fit table below is still available for staff review.';

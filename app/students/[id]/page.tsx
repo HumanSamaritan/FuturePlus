@@ -3,7 +3,7 @@ import { STUDENT_STATUS } from '@/lib/constants';
 import { getCourseCatalog } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
 import { CourseWithCollege } from '@/lib/types';
-import { updateStudentStatusAction } from '../actions';
+import { regenerateCounsellingSummaryAction, updateStudentStatusAction } from '../actions';
 
 export default async function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -83,6 +83,10 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
         <h2>AI counselling and college-fit review</h2>
         <p className="muted">Gemini reviews the database-grounded UG/PG shortlist. Staff should verify live university details before advising the student.</p>
         <pre>{student.ai_summary || 'No summary generated yet.'}</pre>
+        <form action={regenerateCounsellingSummaryAction}>
+          <input type="hidden" name="studentId" value={student.id} />
+          <button className="secondary-button" type="submit">Regenerate Gemini review</button>
+        </form>
       </div>
 
       <div className="form-card">

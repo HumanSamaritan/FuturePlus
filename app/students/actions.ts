@@ -297,3 +297,81 @@ export async function updateStudentStatusAction(formData: FormData) {
   revalidatePath(`/students/${studentId}`);
   revalidatePath('/dashboard');
 }
+
+export async function regenerateCounsellingSummaryAction(formData: FormData) {
+  const supabase = await createClient();
+  const studentId = String(formData.get('studentId') || '');
+  if (!studentId) throw new Error('Student ID is required.');
+
+  const [{ data: student, error: studentError }, { data: storedRecommendations, error: recommendationError }] =
+    await Promise.all([
+      supabase.from('students').select('*').eq('id', studentId).single(),
+      supabase.from('recommendations').select('*').eq('student_id', studentId).order('rank')
+    ]);
+
+  if (studentError) throw new Error(studentError.message);
+  if (recommendationError) throw new Error(recommendationError.message);
+
+  const allCourses = await getCourseCatalog();
+  const programmeLevel = student.desired_program_level === 'postgraduate' ? 'postgraduate' : 'undergraduate';
+  const courses = allCourses.filter(
+    (course) => (course.program_level || 'undergraduate') === programmeLevel
+  );
+  const recommendations = (storedRecommendations ?? []).map((recommendation) => ({
+    courseId: recommendation.course_id,
+    fitScore: Number(recommendation.fit_score),
+    rank: recommendation.rank,
+    scoreBreakdown: recommendation.score_breakdown || {},
+    reason: recommendation.reason,
+    staffHiddenReason: recommendation.staff_hidden_reason
+  }));
+  const studentInput = {
+    programLevel: programmeLevel,
+    firstName: student.first_name,
+    lastName: student.last_name,
+    email: student.email || undefined,
+    phone: student.phone || undefined,
+    yearX: student.year_x,
+    marksX: student.marks_x,
+    yearXii: student.year_xii,
+    marksXii: student.marks_xii,
+    board: student.board || undefined,
+    city: student.city || undefined,
+    state: student.state || undefined,
+    country: student.country || 'India',
+    targetIntake: student.target_intake || undefined,
+    subjectsInterest: student.subjects_interest || [],
+    preferredLocations: student.preferred_locations || [],
+    budgetMin: student.budget_min,
+    budgetMax: student.budget_max,
+    salaryExpectation: student.salary_expectation,
+    hostelRequired: Boolean(student.hostel_required),
+    passion: student.passion || undefined,
+    purpose: student.purpose || undefined,
+    strengths: student.strengths || undefined,
+    constraints: student.constraints || undefined,
+    supportRequired: student.support_required || [],
+    notes: student.notes || undefined,
+    undergraduateDegree: student.undergraduate_degree || undefined,
+    undergraduateSpecialisation: student.undergraduate_specialisation || undefined,
+    undergraduateUniversity: student.undergraduate_university || undefined,
+    undergraduateGraduationYear: student.undergraduate_graduation_year,
+    pgApplicantStatus: student.pg_applicant_status || undefined,
+    semestersCompleted: student.semesters_completed,
+    semesterMarks: student.semester_marks || {},
+    undergraduateFinalPercentage: student.undergraduate_final_percentage,
+    currentEmployer: student.current_employer || undefined,
+    currentJobTitle: student.current_job_title || undefined,
+    workExperienceMonths: student.work_experience_months
+  };
+
+  const summary = await generateCounsellingSummary(studentInput, courses, recommendations);
+  const { error: updateError } = await supabase
+    .from('students')
+    .update({ ai_summary: summary })
+    .eq('id', studentId);
+  if (updateError) throw new Error(updateError.message);
+
+  revalidatePath(`/students/${studentId}`);
+  redirect(`/students/${studentId}`);
+}
