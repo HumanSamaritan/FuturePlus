@@ -238,6 +238,12 @@ nav a:hover {
 .social-media-card { min-height: 220px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(135deg, #edf4ff, #fff); }
 .social-media-card strong { margin-top: 22px; color: var(--primary-2); }
 .import-panel { margin: 22px 0; padding: 20px; border: 1px dashed #a8b3cc; border-radius: 18px; background: #f8faff; }
+.bulk-import-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.programme-import-panel { position: relative; margin: 0; padding-top: 54px; }
+.programme-import-panel > .programme-badge { position: absolute; top: 18px; left: 20px; }
+.ug-import-panel { background: #f8faff; border-color: #a8b3cc; }
+.pg-import-panel { background: #f4fbf8; border-color: #86c9a7; }
+.pg-import-panel > .programme-badge { color: #166534; background: #dcfce7; }
 .file-button { display: inline-flex; align-items: center; }
 .file-button input { display: none; }
 .import-message { color: var(--primary-2); font-weight: 700; }
@@ -666,6 +672,7 @@ pre {
   .workspace-nav + main { margin-left: 0; padding: 20px 16px 48px; }
   .staff-identity { position: static; max-width: 100%; }
   .inline-edit-form { position: fixed; inset: 12px; width: auto; overflow-y: auto; grid-template-columns: 1fr; }
+  .bulk-import-grid { grid-template-columns: 1fr; }
   .wizard-progress { display: flex; overflow-x: auto; }
   .wizard-step { flex: 0 0 auto; }
 }

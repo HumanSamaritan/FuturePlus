@@ -12,12 +12,22 @@ export default function AdminPage() {
       <p className="muted">
         Add or update one institution manually, or use the bulk spreadsheet workflow below.
       </p>
-      <CollegeImport />
+      <div className="bulk-import-grid">
+        <CollegeImport programLevel="undergraduate" />
+        <CollegeImport programLevel="postgraduate" />
+      </div>
 
       <form action={addCollegeCourseAction}>
         <div className="form-section">
           <h2>College details</h2>
           <div className="grid grid-2">
+            <div className="field">
+              <label htmlFor="programLevel">Program level</label>
+              <select id="programLevel" name="programLevel" defaultValue="undergraduate">
+                <option value="undergraduate">Undergraduate</option>
+                <option value="postgraduate">Postgraduate</option>
+              </select>
+            </div>
             <div className="field">
               <label htmlFor="collegeName">College name *</label>
               <input id="collegeName" name="collegeName" required />

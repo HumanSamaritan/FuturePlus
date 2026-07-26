@@ -232,7 +232,10 @@ const ImportRowSchema = z.object({
 const truthy = (value: unknown) => ['true', 'yes', '1', 'y'].includes(String(value).toLowerCase());
 const nullableNumber = (value: unknown) => value === '' || value == null ? null : Number(value);
 
-async function importCollegeRows(rows: unknown[]) {
+async function importCollegeRows(
+  rows: unknown[],
+  enforcedProgramLevel?: 'undergraduate' | 'postgraduate'
+) {
   const importId = crypto.randomUUID();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -240,7 +243,13 @@ async function importCollegeRows(rows: unknown[]) {
 
   let parsedRows: z.infer<typeof ImportRowSchema>[];
   try {
-    parsedRows = z.array(ImportRowSchema).min(1, 'The CSV contains no data rows.').max(1000).parse(rows);
+    const rowsWithProgramLevel = enforcedProgramLevel
+      ? rows.map((row) => ({
+          ...(typeof row === 'object' && row !== null ? row : {}),
+          program_level: enforcedProgramLevel
+        }))
+      : rows;
+    parsedRows = z.array(ImportRowSchema).min(1, 'The CSV contains no data rows.').max(1000).parse(rowsWithProgramLevel);
   } catch (error) {
     console.error('[college-import] validation failed', { importId, user: user.email, error });
     throw error;
@@ -323,9 +332,12 @@ async function importCollegeRows(rows: unknown[]) {
   return { imported: parsedRows.length, updated: verifiedCourses?.length ?? 0, records, importId };
 }
 
-export async function importCollegeRowsAction(rows: unknown[]) {
+export async function importCollegeRowsAction(
+  rows: unknown[],
+  programLevel?: 'undergraduate' | 'postgraduate'
+) {
   try {
-    const result = await importCollegeRows(rows);
+    const result = await importCollegeRows(rows, programLevel);
     return { ok: true as const, ...result };
   } catch (error) {
     const importId = crypto.randomUUID();
