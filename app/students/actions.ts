@@ -313,7 +313,8 @@ export async function regenerateCounsellingSummaryAction(formData: FormData) {
   if (recommendationError) throw new Error(recommendationError.message);
 
   const allCourses = await getCourseCatalog();
-  const programmeLevel = student.desired_program_level === 'postgraduate' ? 'postgraduate' : 'undergraduate';
+  const programmeLevel: 'undergraduate' | 'postgraduate' =
+    student.desired_program_level === 'postgraduate' ? 'postgraduate' : 'undergraduate';
   const courses = allCourses.filter(
     (course) => (course.program_level || 'undergraduate') === programmeLevel
   );
