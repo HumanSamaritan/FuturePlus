@@ -51,13 +51,16 @@ export default function CollegeImport({ programLevel }: { programLevel: ProgramL
       const columns = parseLine(lines[0]).map((column) => column.trim().toLowerCase());
       const missing = requiredHeaders.filter((header) => !columns.includes(header));
       if (missing.length) throw new Error(`Missing required CSV columns: ${missing.join(', ')}`);
-      const rows = lines.slice(1).map((line) => ({
-        ...Object.fromEntries(
+      const rows: Array<Record<string, string> & { program_level: ProgramLevel }> = lines.slice(1).map((line) => {
+        const parsedRow = Object.fromEntries(
           parseLine(line).map((value, index) => [columns[index], value.trim()])
-        ),
-        program_level: programLevel
-      }));
-      const uploadSummary = rows.slice(0, 3).map((row) => `${row.college_name} / ${row.course_name}`).join(', ');
+        ) as Record<string, string>;
+        return { ...parsedRow, program_level: programLevel };
+      });
+      const uploadSummary = rows
+        .slice(0, 3)
+        .map((row) => `${row['college_name']} / ${row['course_name']}`)
+        .join(', ');
       setMessage(`Uploading ${file.name} as ${programmeLabel}: ${uploadSummary}${rows.length > 3 ? ` and ${rows.length - 3} more` : ''}...`);
       const result = await importCollegeRowsAction(rows, programLevel);
       if (!result.ok) {
