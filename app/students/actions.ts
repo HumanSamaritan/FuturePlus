@@ -8,6 +8,7 @@ import { getCourseCatalog } from '@/lib/data';
 import { isAllowedUserEmail } from '@/lib/env';
 import { generateRecommendations } from '@/lib/recommendation';
 import { createClient } from '@/lib/supabase/server';
+import { discoverWebCollegeInsights } from '@/lib/web-college-discovery';
 
 const StudentSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -366,11 +367,17 @@ export async function regenerateCounsellingSummaryAction(formData: FormData) {
     workExperienceMonths: student.work_experience_months
   };
 
-  const summary = await generateCounsellingSummary(studentInput, courses, recommendations);
+  const [summary, webCollegeInsights] = await Promise.all([
+    generateCounsellingSummary(studentInput, courses, recommendations),
+    discoverWebCollegeInsights(studentInput, courses)
+  ]);
   const { error: updateError } = await supabase
     .from('students')
-    .update({ ai_summary: summary })
+    .update({ ai_summary: summary, web_college_insights: webCollegeInsights })
     .eq('id', studentId);
+  if (updateError?.message.includes('web_college_insights')) {
+    throw new Error('Run Supabase migration 008_web_college_insights.sql before regenerating AI Insights.');
+  }
   if (updateError) throw new Error(updateError.message);
 
   revalidatePath(`/students/${studentId}`);

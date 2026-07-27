@@ -3,6 +3,7 @@ import { STUDENT_STATUS } from '@/lib/constants';
 import { getCourseCatalog } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
 import { CourseWithCollege } from '@/lib/types';
+import { WebCollegeInsight } from '@/lib/web-college-discovery';
 import { regenerateCounsellingSummaryAction, updateStudentStatusAction } from '../actions';
 
 export default async function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -79,14 +80,76 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
       ) : null}
 
       <div className="card">
-        <span className="kicker">Gemini staff intelligence</span>
+        <span className="kicker">AI staff intelligence</span>
         <h2>AI counselling and college-fit review</h2>
-        <p className="muted">Gemini reviews the database-grounded Under Graduate/Post Graduate shortlist. Staff should verify live university details before advising the student.</p>
+        <p className="muted">AI Insights reviews verified database recommendations and separately researches live non-partner alternatives across India. Staff must verify web-discovered details before advising the student.</p>
         <pre>{student.ai_summary || 'No summary generated yet.'}</pre>
         <form action={regenerateCounsellingSummaryAction}>
           <input type="hidden" name="studentId" value={student.id} />
           <button className="secondary-button" type="submit">Regenerate AI Insights</button>
         </form>
+      </div>
+
+      <div className="table-card">
+        <span className="kicker">Live web discovery</span>
+        <h2>Web-discovered non-partner alternatives</h2>
+        <p className="alert">
+          These course-level alternatives were found from live web searches and are not yet part of the verified Future Plus college database.
+          Every fee, placement figure, eligibility rule and hostel claim requires staff verification from the linked source.
+        </p>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>College / Course</th>
+                <th>Fee / Duration</th>
+                <th>Location</th>
+                <th>Placements</th>
+                <th>Hostel</th>
+                <th>Source</th>
+                <th>Fit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {((student.web_college_insights || []) as WebCollegeInsight[]).map((insight, index) => (
+                <tr className="recommendation-row non-partner-row" key={`${insight.college_name}-${insight.course_name}`}>
+                  <td>#{index + 1}</td>
+                  <td>
+                    <strong>{insight.college_name}</strong><br />
+                    {insight.course_name}<br />
+                    <span className="muted">{insight.subject_area} · {insight.program_level.replaceAll('_', ' ')}</span><br />
+                    <span className="muted">{insight.fit_reason}</span>
+                  </td>
+                  <td>
+                    {insight.total_fee ? `${Number(insight.total_fee).toLocaleString('en-IN')} ${insight.currency || 'INR'}` : 'Verify fee'}<br />
+                    {insight.duration || 'Verify duration'}
+                  </td>
+                  <td>{[insight.city, insight.state, insight.country].filter(Boolean).join(', ') || 'Verify'}</td>
+                  <td>
+                    Count: {insight.placement_count ?? 'Verify'}<br />
+                    Avg: {insight.average_package ? Number(insight.average_package).toLocaleString('en-IN') : 'Verify'}<br />
+                    High: {insight.highest_package ? Number(insight.highest_package).toLocaleString('en-IN') : 'Verify'}
+                  </td>
+                  <td>{insight.hostel_available === null ? 'Verify' : insight.hostel_available ? 'Yes' : 'No'}</td>
+                  <td>
+                    <a href={insight.source_url} target="_blank" rel="noreferrer">Primary source</a>
+                    {insight.additional_sources?.map((url, sourceIndex) => (
+                      <span key={url}><br /><a href={url} target="_blank" rel="noreferrer">Source {sourceIndex + 2}</a></span>
+                    ))}
+                    <br /><span className="partner-status partner-non_partner">Staff verification required</span>
+                    <br /><span className="muted">Partner: non-partner · Commission: no</span>
+                    <br /><span className="muted">POC: {[insight.poc_name, insight.poc_email].filter(Boolean).join(' / ') || 'Verify'}</span>
+                  </td>
+                  <td><ScorePill score={insight.fit_score} /></td>
+                </tr>
+              ))}
+              {!student.web_college_insights?.length ? (
+                <tr><td colSpan={8}>Select Regenerate AI Insights to research current non-partner alternatives from the web.</td></tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="form-card">
