@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { DESTINATIONS } from '@/lib/constants';
+import { DESTINATIONS } from '@/lib/public-content';
 
 export function generateStaticParams() {
   return DESTINATIONS.map((destination) => ({ city: destination.slug }));

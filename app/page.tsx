@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { DESTINATIONS, GALLERY_IMAGES } from '@/lib/constants';
+import { DESTINATIONS, GALLERY_IMAGES } from '@/lib/public-content';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
