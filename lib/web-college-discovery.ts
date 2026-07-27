@@ -37,18 +37,37 @@ function clean(value?: string) {
   return value?.trim().replace(/^['"]|['"]$/g, '');
 }
 
+function providerKey(provider: 'groq' | 'gemini' | 'openrouter') {
+  const specific = clean(process.env[`${provider.toUpperCase()}_API_KEY`]);
+  const legacyProvider = clean(process.env.AI_PROVIDER)?.toLowerCase();
+  return specific || (legacyProvider === provider ? clean(process.env.AI_API_KEY) : undefined);
+}
+
 function extractJsonArray(text: string): unknown[] {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1];
-  const source = fenced || text;
-  const start = source.indexOf('[');
-  const end = source.lastIndexOf(']');
-  if (start < 0 || end <= start) return [];
-  try {
-    const parsed = JSON.parse(source.slice(start, end + 1));
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+  const sources = [fenced, text].filter(Boolean) as string[];
+  for (const source of sources) {
+    const candidates = [
+      source.trim(),
+      source.slice(source.indexOf('['), source.lastIndexOf(']') + 1)
+    ];
+    for (const candidate of candidates) {
+      if (!candidate) continue;
+      try {
+        const parsed = JSON.parse(candidate);
+        if (Array.isArray(parsed)) return parsed;
+        if (parsed && typeof parsed === 'object') {
+          const object = parsed as Record<string, unknown>;
+          for (const key of ['results', 'colleges', 'universities', 'recommendations', 'data']) {
+            if (Array.isArray(object[key])) return object[key] as unknown[];
+          }
+        }
+      } catch {
+        // Try the next likely JSON representation.
+      }
+    }
   }
+  return [];
 }
 
 function nullableNumber(value: unknown) {
@@ -114,7 +133,7 @@ ${JSON.stringify(student, null, 2)}`;
 }
 
 async function discoverWithGroq(prompt: string) {
-  const apiKey = clean(process.env.GROQ_API_KEY);
+  const apiKey = providerKey('groq');
   if (!apiKey) return null;
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -131,7 +150,7 @@ async function discoverWithGroq(prompt: string) {
 }
 
 async function discoverWithGemini(prompt: string) {
-  const apiKey = clean(process.env.GEMINI_API_KEY);
+  const apiKey = providerKey('gemini');
   if (!apiKey) return null;
   const model = (clean(process.env.GEMINI_SEARCH_MODEL) || clean(process.env.GEMINI_MODEL) || 'gemini-2.5-flash')
     .replace(/^models\//i, '');
@@ -155,7 +174,7 @@ async function discoverWithGemini(prompt: string) {
 }
 
 async function discoverWithOpenRouter(prompt: string) {
-  const apiKey = clean(process.env.OPENROUTER_API_KEY);
+  const apiKey = providerKey('openrouter');
   if (!apiKey || clean(process.env.OPENROUTER_WEB_SEARCH) !== 'true') return null;
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -183,7 +202,14 @@ async function discoverWithOpenRouter(prompt: string) {
 export async function discoverWebCollegeInsights(
   student: StudentInput,
   databaseCourses: CourseWithCollege[]
-): Promise<WebCollegeInsight[]> {
+): Promise<{
+  insights: WebCollegeInsight[];
+  status: {
+    searched_at: string;
+    providers: Array<{ provider: string; status: 'not_configured' | 'failed' | 'no_parseable_results' | 'used'; detail: string }>;
+    result_count: number;
+  };
+}> {
   const prompt = buildDiscoveryPrompt(student);
   const searches = [
     { provider: 'groq-web', run: () => discoverWithGroq(prompt) },
@@ -192,10 +218,25 @@ export async function discoverWebCollegeInsights(
   ];
   const results = await Promise.all(searches.map(async ({ provider, run }) => {
     try {
-      return { provider, text: await run() };
+      const text = await run();
+      return {
+        provider,
+        text,
+        error: null,
+        configured: text !== null || (
+          provider === 'groq-web' ? Boolean(providerKey('groq')) :
+          provider === 'gemini-search' ? Boolean(providerKey('gemini')) :
+          Boolean(providerKey('openrouter') && clean(process.env.OPENROUTER_WEB_SEARCH) === 'true')
+        )
+      };
     } catch (error) {
       console.error('[web-college-discovery] provider failed', { provider, error });
-      return { provider, text: null };
+      return {
+        provider,
+        text: null,
+        error: error instanceof Error ? error.message : 'Unknown search error',
+        configured: true
+      };
     }
   }));
 
@@ -203,9 +244,12 @@ export async function discoverWebCollegeInsights(
     `${course.college_name}|${course.course_name}`.toLowerCase()
   ));
   const merged = new Map<string, { candidate: DiscoveryCandidate; providers: string[] }>();
+  const parsedCounts = new Map<string, number>();
   for (const result of results) {
     if (!result.text) continue;
-    for (const rawCandidate of extractJsonArray(result.text)) {
+    const parsedRows = extractJsonArray(result.text);
+    parsedCounts.set(result.provider, parsedRows.length);
+    for (const rawCandidate of parsedRows) {
       const candidate = normalizeCandidate(rawCandidate);
       if (!candidate) continue;
       const key = `${candidate.college_name}|${candidate.course_name}`.toLowerCase();
@@ -239,7 +283,7 @@ export async function discoverWebCollegeInsights(
     candidates[index].providers
   ]));
 
-  return scored.map((recommendation) => {
+  const insights = scored.map((recommendation) => {
     const course = courseById.get(recommendation.courseId)!;
     return {
       college_name: course.college_name,
@@ -268,4 +312,30 @@ export async function discoverWebCollegeInsights(
       discovered_by: providersById.get(course.course_id) || []
     };
   });
+  const providerStatuses = results.map((result) => {
+    const parsedCount = parsedCounts.get(result.provider) || 0;
+    if (!result.configured) {
+      return { provider: result.provider, status: 'not_configured' as const, detail: 'No enabled API key was found.' };
+    }
+    if (result.error) {
+      return { provider: result.provider, status: 'failed' as const, detail: result.error };
+    }
+    if (!parsedCount) {
+      return {
+        provider: result.provider,
+        status: 'no_parseable_results' as const,
+        detail: result.text ? 'The provider responded, but no valid college rows could be parsed.' : 'The provider returned no response.'
+      };
+    }
+    return { provider: result.provider, status: 'used' as const, detail: `${parsedCount} row(s) returned before validation and ranking.` };
+  });
+
+  return {
+    insights,
+    status: {
+      searched_at: new Date().toISOString(),
+      providers: providerStatuses,
+      result_count: insights.length
+    }
+  };
 }

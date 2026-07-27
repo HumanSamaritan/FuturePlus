@@ -97,6 +97,26 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
           These course-level alternatives were found from live web searches and are not yet part of the verified Future Plus college database.
           Every fee, placement figure, eligibility rule and hostel claim requires staff verification from the linked source.
         </p>
+        {student.web_discovery_status ? (
+          <div className="discovery-status">
+            <p className="muted">
+              <strong>Latest search:</strong>{' '}
+              {new Date(student.web_discovery_status.searched_at).toLocaleString('en-IN')} ·{' '}
+              {student.web_discovery_status.result_count || 0} result(s)
+            </p>
+            <ul>
+              {(student.web_discovery_status.providers || []).map((provider: {
+                provider: string;
+                status: string;
+                detail: string;
+              }) => (
+                <li key={provider.provider}>
+                  <strong>{provider.provider}:</strong> {provider.status.replaceAll('_', ' ')} — {provider.detail}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <div className="table-wrap">
           <table>
             <thead>
@@ -145,7 +165,13 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
                 </tr>
               ))}
               {!student.web_college_insights?.length ? (
-                <tr><td colSpan={8}>Select Regenerate AI Insights to research current non-partner alternatives from the web.</td></tr>
+                <tr>
+                  <td colSpan={8}>
+                    {student.web_discovery_status
+                      ? 'The latest web search produced no usable rows. Review the provider status above, correct the configuration, and regenerate.'
+                      : 'Select Regenerate AI Insights to research current non-partner alternatives from the web.'}
+                  </td>
+                </tr>
               ) : null}
             </tbody>
           </table>

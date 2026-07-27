@@ -367,15 +367,19 @@ export async function regenerateCounsellingSummaryAction(formData: FormData) {
     workExperienceMonths: student.work_experience_months
   };
 
-  const [summary, webCollegeInsights] = await Promise.all([
+  const [summary, webDiscovery] = await Promise.all([
     generateCounsellingSummary(studentInput, courses, recommendations),
     discoverWebCollegeInsights(studentInput, courses)
   ]);
   const { error: updateError } = await supabase
     .from('students')
-    .update({ ai_summary: summary, web_college_insights: webCollegeInsights })
+    .update({
+      ai_summary: summary,
+      web_college_insights: webDiscovery.insights,
+      web_discovery_status: webDiscovery.status
+    })
     .eq('id', studentId);
-  if (updateError?.message.includes('web_college_insights')) {
+  if (updateError && /web_college_insights|web_discovery_status/.test(updateError.message)) {
     throw new Error('Run Supabase migration 008_web_college_insights.sql before regenerating AI Insights.');
   }
   if (updateError) throw new Error(updateError.message);
