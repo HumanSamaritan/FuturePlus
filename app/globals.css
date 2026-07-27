@@ -323,7 +323,54 @@ nav a:hover {
 .dark-section { background: #101b34; color: #fff; }
 .dark-section .kicker { color: #fbbf24; }
 .city-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 34px; }
-.city-row span { border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); padding: 12px 18px; border-radius: 999px; }
+.city-row a { border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); padding: 12px 18px; border-radius: 999px; }
+.city-row a:hover { color: #fbbf24; border-color: rgba(251,191,36,.6); }
+.destination-overview-link { display: inline-block; margin-top: 28px; color: #fbbf24; font-weight: 850; }
+.page-hero {
+  padding: clamp(70px, 10vw, 135px) max(24px, calc((100vw - 1180px) / 2));
+  background: linear-gradient(125deg, #eef3ff, #fff 58%, #fff6df);
+}
+.page-hero h1 { max-width: 900px; }
+.page-hero > p { max-width: 760px; color: var(--muted); font-size: 1.12rem; line-height: 1.7; }
+.about-story-grid, .university-partnership-callout {
+  display: grid;
+  grid-template-columns: .8fr 1.2fr;
+  gap: 70px;
+}
+.about-story-grid p, .university-partnership-callout p { color: var(--muted); font-size: 1.08rem; line-height: 1.75; }
+.about-principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); }
+.about-principles article { padding: 34px; background: #fff; }
+.about-principles article > span { color: var(--accent); font-weight: 900; }
+.about-principles article h2 { margin-top: 30px; }
+.about-principles article p { color: var(--muted); line-height: 1.65; }
+.university-partnership-callout { color: #fff; background: var(--primary); }
+.university-partnership-callout .kicker, .university-partnership-callout .text-link { color: #fbbf24; }
+.university-partnership-callout p { color: #dbe4f7; }
+.destination-card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }
+.destination-card { overflow: hidden; display: grid; grid-template-columns: .9fr 1.1fr; min-height: 290px; border: 1px solid var(--line); border-radius: 24px; background: #fff; box-shadow: var(--shadow); }
+.destination-card img { width: 100%; height: 100%; min-height: 290px; object-fit: cover; }
+.destination-card > div { display: flex; flex-direction: column; justify-content: center; padding: 28px; }
+.destination-card span { color: var(--primary-2); font-size: .78rem; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
+.destination-card h2 { margin: 10px 0; }
+.destination-card p { color: var(--muted); }
+.destination-card strong { margin-top: 18px; color: var(--primary-2); }
+.destination-detail-hero { position: relative; min-height: 520px; color: #fff; background: var(--primary); }
+.destination-detail-hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .38; }
+.destination-detail-hero > div { position: relative; z-index: 1; max-width: 1180px; margin: auto; padding: 150px 24px 90px; }
+.destination-detail-hero h1 { max-width: 760px; }
+.destination-detail-hero p { max-width: 720px; font-size: 1.08rem; line-height: 1.7; }
+.destination-institution-grid { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.destination-institution-grid article { min-height: 150px; padding: 25px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.destination-institution-grid article > span { color: var(--accent); font-size: .72rem; font-weight: 900; }
+.destination-institution-grid h3 { margin: 24px 0 8px; }
+.destination-institution-grid p { color: var(--muted); font-size: .85rem; }
+.destination-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
+.gallery-preview-grid, .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 28px; }
+.gallery-preview-grid img, .gallery-grid img { display: block; width: 100%; height: 270px; object-fit: cover; border-radius: 16px; }
+.gallery-preview-grid img:first-child { grid-row: span 2; height: 554px; }
+.gallery-grid figure { margin: 0; }
+.gallery-grid .gallery-feature { grid-column: span 2; }
+.gallery-grid .gallery-feature img { height: 420px; }
 .public-cta { display: flex; justify-content: space-between; gap: 40px; align-items: center; background: #fff7e5; }
 .public-cta h2 { margin-bottom: 8px; }
 .media-section { background: #f8faff; }
@@ -790,7 +837,9 @@ pre {
     flex-direction: column;
   }
 
-  .public-hero, .split-section, .programme-grid, .media-grid, .university-heading { grid-template-columns: 1fr; }
+  .public-hero, .split-section, .programme-grid, .media-grid, .university-heading, .about-story-grid, .university-partnership-callout, .about-principles, .destination-card-grid, .destination-institution-grid, .gallery-preview-grid, .gallery-grid { grid-template-columns: 1fr; }
+  .destination-card { grid-template-columns: 1fr; }
+  .gallery-preview-grid img:first-child, .gallery-grid .gallery-feature { grid-row: auto; grid-column: auto; height: 270px; }
   .university-grid { grid-template-columns: 1fr; }
   .contact-actions { grid-template-columns: 1fr; max-width: 420px; }
   .public-hero-image, .public-hero-image img { min-height: 360px; height: 360px; }

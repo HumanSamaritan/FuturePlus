@@ -1,10 +1,10 @@
 import Link from 'next/link';
+import { DESTINATIONS, GALLERY_IMAGES } from '@/lib/public-content';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const programmes = ['MBA & PGDM', 'B.Tech', 'BBA & BCA', 'MBBS & BDS', 'Law', 'Study Abroad'];
-const cities = ['Pune', 'Bangalore', 'Delhi', 'Mumbai', 'Bhubaneswar', 'Hyderabad'];
 const partnerUniversities = [
   ['Sparsh Global Business School', 'Greater Noida, Uttar Pradesh'],
   ['Bharath Institute of Higher Education and Research', 'Chennai, Tamil Nadu'],
@@ -151,7 +151,25 @@ export default function HomePage() {
       <section id="destinations" className="public-section dark-section">
         <span className="kicker">Study destinations</span>
         <h2>Unlock your future in top education cities</h2>
-        <div className="city-row">{cities.map((city) => <span key={city}>{city}</span>)}</div>
+        <div className="city-row">
+          {DESTINATIONS.map((destination) => (
+            <Link href={`/destinations/${destination.slug}`} key={destination.slug}>{destination.name}</Link>
+          ))}
+        </div>
+        <Link href="/destinations" className="destination-overview-link">Explore all destinations →</Link>
+      </section>
+
+      <section className="public-section gallery-preview-section">
+        <div className="section-heading">
+          <span className="kicker">Community moments</span>
+          <h2>Inside the Future Plus education community</h2>
+        </div>
+        <div className="gallery-preview-grid">
+          {GALLERY_IMAGES.slice(0, 5).map((image, index) => (
+            <img src={image} alt={`Future Plus education activity ${index + 1}`} loading="lazy" key={image} />
+          ))}
+        </div>
+        <Link href="/gallery" className="secondary-button">View full gallery</Link>
       </section>
 
       <section id="media" className="public-section media-section">
