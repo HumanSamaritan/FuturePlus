@@ -97,6 +97,7 @@ function compactError(errorText: string) {
 }
 
 async function callGemini(apiKey: string, model: string, prompt: string) {
+  const maxOutputTokens = Number(cleanEnv(process.env.AI_MAX_OUTPUT_TOKENS)) || 3000;
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
     {
@@ -107,7 +108,7 @@ async function callGemini(apiKey: string, model: string, prompt: string) {
       },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: 4096, temperature: 0.2 }
+        generationConfig: { maxOutputTokens, temperature: 0.2 }
       })
     }
   );
@@ -133,6 +134,10 @@ async function callOpenAiCompatible(
   model: string,
   prompt: string
 ) {
+  const configuredMaxTokens = Number(cleanEnv(process.env.AI_MAX_OUTPUT_TOKENS));
+  const maxOutputTokens = configuredMaxTokens > 0
+    ? configuredMaxTokens
+    : provider === 'groq' ? 2600 : 3000;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${apiKey}`
@@ -154,7 +159,7 @@ async function callOpenAiCompatible(
         },
         { role: 'user', content: prompt }
       ],
-      max_tokens: 4096,
+      max_tokens: maxOutputTokens,
       temperature: 0.2,
       stream: false
     })
@@ -219,7 +224,7 @@ Use these headings:
 1. Student fit overview
 2. Best-fit colleges (rank up to five, including course, fit score, total fee, location, hostel, placement evidence and the specific reasons it fits)
 3. Partner-network opportunities (identify preferred and pipeline partners separately)
-4. Strong non-partner alternatives
+4. Strong verified-database non-partner alternatives (do not describe this as live web research)
 5. Financial support and risk flags
 6. Questions for the next counselling conversation
 7. Data staff must verify before giving final advice
@@ -278,7 +283,7 @@ Rules:
 
 Independent analyses:
 ${successfulResults.map((result, index) =>
-    `ANALYSIS ${index + 1}:\n${result.text.slice(0, 7000)}`
+    `ANALYSIS ${index + 1}:\n${result.text.slice(0, 3000)}`
   ).join('\n\n')}`;
 
   try {
