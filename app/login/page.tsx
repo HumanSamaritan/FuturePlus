@@ -18,20 +18,30 @@ async function LoginPageContent({ searchParams }: { searchParams?: Promise<{ err
   }
 
   return (
-    <section className="hero">
-      <div>
+    <section className="staff-login-page">
+      <div className="staff-login-intro">
         <span className="kicker">Private staff workspace</span>
-        <h1>Welcome back, Future Plus team.</h1>
-        <p className="muted">
-          This area contains student and institutional information. Access is limited to
-          approved Future Plus employee email addresses.
+        <h1>Welcome to your Future Plus workspace.</h1>
+        <p>
+          Securely manage student enquiries, institutional information and counselling
+          activity from one place.
         </p>
+        <div className="login-assurance" aria-label="Workspace benefits">
+          <span>Role-based access</span>
+          <span>Protected student records</span>
+          <span>Centralised counselling workflow</span>
+        </div>
       </div>
-      <div className="hero-card">
-        <h2>Sign in</h2>
+      <div className="staff-login-card">
+        <span className="login-card-label">Authorised access</span>
+        <h2>Sign in to continue</h2>
         {params?.error ? <p className="alert">{params.error}</p> : null}
-        <p className="muted">Continue with your approved Google account. Your staff name and email will be recorded against every student lead you create or manage.</p>
+        <p className="muted">
+          Use your approved Google account. Your account permissions automatically determine
+          the student and staff information available to you.
+        </p>
         <LoginButton />
+        <p className="login-privacy-note">Access is restricted to approved Future Plus employees.</p>
         {user ? <p className="help-text">Signed in with {user.email}. You can choose another account above or <a href="/logout"><u>sign out</u></a>.</p> : null}
       </div>
     </section>
