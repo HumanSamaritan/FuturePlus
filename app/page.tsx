@@ -90,7 +90,7 @@ export default function HomePage() {
             </a>
           </div>
           <div className="actions hero-secondary-actions">
-            <a href="#programmes" className="secondary-button">Explore programmes</a>
+            <Link href="/programmes" className="secondary-button">Explore programmes</Link>
             <a href="https://futureplusedus.com/" target="_blank" rel="noreferrer" className="secondary-button">Visit Future Plus Website</a>
           </div>
           <div className="trust-row">
@@ -207,10 +207,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="public-section public-cta">
-        <div><span className="kicker">Start your journey</span><h2>Let’s find the right next step together.</h2><p>Call +91 70085 51071 or email enquiry@futureplusedus.com.</p></div>
-        <div className="actions"><a className="primary-button" href="mailto:enquiry@futureplusedus.com">Get free consultation</a><Link className="secondary-button" href="/login">Staff workspace</Link></div>
-      </section>
     </>
   );
 }

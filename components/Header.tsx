@@ -82,9 +82,11 @@ export default async function Header() {
           </>
         ) : (
           <>
-            <Link href="/#about">About</Link>
-            <Link href="/#programmes">Programmes</Link>
-            <Link href="/#universities">Universities</Link>
+            <Link href="/about">About</Link>
+            <Link href="/programmes">Programmes</Link>
+            <Link href="/universities">Universities</Link>
+            <Link href="/destinations">Destinations</Link>
+            <Link href="/gallery">Gallery</Link>
             <Link href="/#media">Media & Updates</Link>
             <a href="https://futureplusedus.com/" target="_blank" rel="noreferrer">Corporate Website</a>
             <Link href="/login" className="nav-login">Staff Login</Link>

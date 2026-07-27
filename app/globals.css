@@ -479,8 +479,6 @@ nav a:hover {
 .gallery-grid figure { margin: 0; }
 .gallery-grid .gallery-feature { grid-column: span 2; }
 .gallery-grid .gallery-feature img { height: 420px; }
-.public-cta { display: flex; justify-content: space-between; gap: 40px; align-items: center; background: #fff7e5; }
-.public-cta h2 { margin-bottom: 8px; }
 .media-section { background: #f8faff; }
 .media-section .section-heading p { max-width: 720px; }
 .media-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
@@ -971,7 +969,6 @@ pre {
   .university-grid { grid-template-columns: 1fr; }
   .contact-actions { grid-template-columns: 1fr; max-width: 420px; }
   .public-hero-image, .public-hero-image img { min-height: 360px; height: 360px; }
-  .public-cta { align-items: flex-start; flex-direction: column; }
   .workspace-nav { position: static; width: auto; }
   .workspace-nav nav { display: flex; }
   .workspace-nav + main { margin-left: 0; padding: 20px 16px 48px; }

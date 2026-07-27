@@ -26,7 +26,7 @@ export default function AboutPage() {
 
       <section className="public-section university-partnership-callout">
         <div><span className="kicker">University partnerships</span><h2>Better information at every decision point.</h2></div>
-        <div><p>Our institution network helps counsellors explain programmes, scholarships, application processes and student-support options more clearly.</p><Link className="text-link" href="/#universities">View the university network →</Link></div>
+        <div><p>Our institution network helps counsellors explain programmes, scholarships, application processes and student-support options more clearly.</p><Link className="text-link" href="/universities">View the university network →</Link></div>
       </section>
     </>
   );
