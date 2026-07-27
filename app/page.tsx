@@ -5,6 +5,38 @@ export const revalidate = 0;
 
 const programmes = ['MBA & PGDM', 'B.Tech', 'BBA & BCA', 'MBBS & BDS', 'Law', 'Study Abroad'];
 const cities = ['Pune', 'Bangalore', 'Delhi', 'Mumbai', 'Bhubaneswar', 'Hyderabad'];
+const partnerUniversities = [
+  ['Sparsh Global Business School', 'Greater Noida, Uttar Pradesh'],
+  ['Bharath Institute of Higher Education and Research', 'Chennai, Tamil Nadu'],
+  ['Hindustan Institute of Technology and Science', 'Chennai, Tamil Nadu'],
+  ['Sathyabama Institute of Science and Technology', 'Chennai, Tamil Nadu'],
+  ['SRM Institute of Science and Technology', 'Chennai, Tamil Nadu'],
+  ['International Management Institute Kolkata', 'Kolkata, West Bengal'],
+  ['Globsyn Business School', 'Kolkata, West Bengal'],
+  ['Calcutta Business School', 'Kolkata, West Bengal'],
+  ['Praxis Business School', 'Kolkata, West Bengal'],
+  ['IQ City Unitedworld School of Business', 'Kolkata, West Bengal'],
+  ['Dr. D. Y. Patil B-School', 'Pune, Maharashtra'],
+  ['Lexicon MILE', 'Pune, Maharashtra'],
+  ['Kirloskar Institute of Advanced Management Studies', 'Harihar, Karnataka / Pune, Maharashtra'],
+  ['International Institute of Management Studies (Sai Balaji)', 'Pune, Maharashtra'],
+  ['Indira School of Business Studies', 'Pune, Maharashtra'],
+  ['Pune Business School', 'Pune, Maharashtra'],
+  ['International School of Management Studies', 'Pune, Maharashtra'],
+  ['ITM Business School', 'Mumbai, Maharashtra'],
+  ['Universal AI University', 'Karjat, Maharashtra'],
+  ['Chetana’s Institute of Management and Research', 'Mumbai, Maharashtra'],
+  ['Welingkar Institute of Management', 'Mumbai, Maharashtra'],
+  ['ATLAS SkillTech University', 'Mumbai, Maharashtra'],
+  ['MIT World Peace University', 'Pune, Maharashtra'],
+  ['Ramachandran International Institute of Management', 'Pune, Maharashtra'],
+  ['Karnataka College of Management', 'Bengaluru, Karnataka'],
+  ['Regional College of Management Bangalore', 'Bengaluru, Karnataka'],
+  ['GIBS Business School', 'Bengaluru, Karnataka'],
+  ['ISBR Business School', 'Bengaluru, Karnataka'],
+  ['Alliance University', 'Bengaluru, Karnataka'],
+  ['RV University', 'Bengaluru, Karnataka']
+] as const;
 const whatsappCounsellors = [
   { number: '917077183053', label: '+91 70771 83053' },
   { number: '919827183443', label: '+91 98271 83443' },
@@ -92,7 +124,31 @@ export default function HomePage() {
         <div className="programme-grid">{programmes.map((item, i) => <article className="programme-card" key={item}><span>0{i + 1}</span><h3>{item}</h3><p>Discover colleges, eligibility, fees and career possibilities with a counsellor.</p></article>)}</div>
       </section>
 
-      <section id="colleges" className="public-section dark-section">
+      <section id="universities" className="public-section university-section">
+        <div className="section-heading university-heading">
+          <div>
+            <span className="kicker">Future Plus network</span>
+            <h2>Achieving success through our university partnerships</h2>
+          </div>
+          <div>
+            <p>Explore institutions across India supported through the Future Plus counselling and admissions network. Partnership and programme availability should be confirmed with our counselling team.</p>
+            <a href="https://futureplusedus.com/" target="_blank" rel="noreferrer" className="text-link">View partnership source →</a>
+          </div>
+        </div>
+        <div className="university-grid">
+          {partnerUniversities.map(([name, location], index) => (
+            <article className="university-card" key={name}>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <div>
+                <h3>{name}</h3>
+                <p>{location}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="destinations" className="public-section dark-section">
         <span className="kicker">Study destinations</span>
         <h2>Unlock your future in top education cities</h2>
         <div className="city-row">{cities.map((city) => <span key={city}>{city}</span>)}</div>

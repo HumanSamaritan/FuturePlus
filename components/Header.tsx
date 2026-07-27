@@ -84,11 +84,10 @@ export default async function Header() {
           <>
             <Link href="/#about">About</Link>
             <Link href="/#programmes">Programmes</Link>
-            <Link href="/#colleges">Colleges</Link>
+            <Link href="/#universities">Universities</Link>
             <Link href="/#media">Media & Updates</Link>
-            <a href="https://futureplusedus.com/" target="_blank" rel="noreferrer">Visit Future Plus Website</a>
-            <a href="https://www.facebook.com/share/1BcYydGmG2/?mibextid=wwXIfr" target="_blank" rel="noreferrer">Facebook</a>
-            <Link href="/login" className="nav-login">Future Plus Staff Login</Link>
+            <a href="https://futureplusedus.com/" target="_blank" rel="noreferrer">Corporate Website</a>
+            <Link href="/login" className="nav-login">Staff Login</Link>
           </>
         )}
       </nav>
