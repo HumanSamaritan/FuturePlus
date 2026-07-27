@@ -283,7 +283,7 @@ export async function discoverWebCollegeInsights(
     candidates[index].providers
   ]));
 
-  const insights = scored.map((recommendation) => {
+  const insights: WebCollegeInsight[] = scored.map((recommendation): WebCollegeInsight => {
     const course = courseById.get(recommendation.courseId)!;
     return {
       college_name: course.college_name,
