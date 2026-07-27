@@ -90,13 +90,10 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
         </form>
       </div>
 
-      <div className="table-card">
+      <div className="card">
         <span className="kicker">Live web discovery</span>
-        <h2>Web-discovered non-partner alternatives</h2>
-        <p className="alert">
-          These course-level alternatives were found from live web searches and are not yet part of the verified Future Plus college database.
-          Every fee, placement figure, eligibility rule and hostel claim requires staff verification from the linked source.
-        </p>
+        <h2>Suggested non-partner institutions</h2>
+        <p className="muted">A lightweight web shortlist based on the student profile. Staff should verify the linked source before advising the student.</p>
         {student.web_discovery_status ? (
           <div className="discovery-status">
             <p className="muted">
@@ -117,7 +114,28 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
             </ul>
           </div>
         ) : null}
-        <div className="table-wrap">
+        <div className="grid grid-2">
+          {((student.web_college_insights || []) as WebCollegeInsight[]).map((insight, index) => (
+            <article className="card" key={`${insight.college_name}-${insight.city}-${insight.state}`}>
+              <span className="kicker">#{index + 1} · {insight.fit_level || 'Review'} fit</span>
+              <h3>{insight.college_name}</h3>
+              <p><strong>Location:</strong> {[insight.city, insight.state, insight.country].filter(Boolean).join(', ') || 'Verify location'}</p>
+              <p>{insight.fit_feedback || insight.fit_reason || 'Potential fit; staff should verify the institution against the student profile.'}</p>
+              <div className="actions">
+                <ScorePill score={insight.fit_score} />
+                <a className="secondary-button" href={insight.source_url} target="_blank" rel="noreferrer">Verify source</a>
+              </div>
+            </article>
+          ))}
+        </div>
+        {!student.web_college_insights?.length ? (
+          <p className="muted">
+            {student.web_discovery_status
+              ? 'The latest web search produced no usable shortlist. Review the provider status above and regenerate.'
+              : 'Select Regenerate AI Insights to find matching non-partner institutions.'}
+          </p>
+        ) : null}
+        <div style={{ display: 'none' }} aria-hidden="true">
           <table>
             <thead>
               <tr>
