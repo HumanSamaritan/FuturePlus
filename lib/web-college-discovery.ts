@@ -139,7 +139,7 @@ function buildDiscoveryPrompt(student: StudentInput) {
 
 Return up to 8 strong course-level alternatives from across India. Research current information from official university pages first; use UGC, AICTE, NIRF, NAAC or official placement/admission documents as secondary sources. Do not invent or estimate missing values.
 
-Return ONLY a valid JSON array. Each object must contain exactly:
+Return ONLY a valid JSON object with one key named "results". The value of "results" must be an array. Each array object must contain exactly:
 college_name, course_name, subject_area, duration, total_fee, placement_count, highest_package, average_package, currency, city, state, poc_name, poc_email, hostel_available, source_url, additional_sources.
 
 Rules:
@@ -201,9 +201,17 @@ ${evidence.slice(0, 24000)}`
     );
   }
   const data = JSON.parse(responseText) as {
-    choices?: Array<{ message?: { content?: unknown } }>;
+    choices?: Array<{
+      finish_reason?: string;
+      message?: { content?: unknown; reasoning?: unknown };
+    }>;
   };
-  return messageText(data.choices?.[0]?.message?.content);
+  const choice = data.choices?.[0];
+  const content = messageText(choice?.message?.content);
+  if (content) return content;
+  throw new Error(
+    `Groq evidence formatter returned empty content using ${model} (finish reason: ${choice?.finish_reason || 'unknown'}).`
+  );
 }
 
 async function discoverWithGroq(prompt: string) {
@@ -219,6 +227,7 @@ async function discoverWithGroq(prompt: string) {
       body: JSON.stringify({
         model,
         messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' },
         max_completion_tokens: 5000
       })
     });
