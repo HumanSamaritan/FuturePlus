@@ -218,6 +218,30 @@ nav a:hover {
 .contact-button span:last-child { display: grid; font-size: .86rem; font-weight: 800; line-height: 1.2; }
 .contact-button small { font-size: .68rem; font-weight: 650; opacity: .82; }
 .whatsapp-button { background: #168f4d; }
+.whatsapp-menu { position: relative; min-width: 0; }
+.whatsapp-menu summary { cursor: pointer; list-style: none; }
+.whatsapp-menu summary::-webkit-details-marker { display: none; }
+.whatsapp-recipient-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 230px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+.whatsapp-recipient-list a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 9px;
+  color: var(--text);
+  font-size: .86rem;
+  font-weight: 750;
+}
+.whatsapp-recipient-list a:hover { background: #eaf8ef; color: #0f7a40; }
 .email-button { background: var(--primary-2); }
 .call-button { background: var(--primary); }
 .hero-secondary-actions { margin-top: 12px; }

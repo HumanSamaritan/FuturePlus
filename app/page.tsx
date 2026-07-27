@@ -5,6 +5,11 @@ export const revalidate = 0;
 
 const programmes = ['MBA & PGDM', 'B.Tech', 'BBA & BCA', 'MBBS & BDS', 'Law', 'Study Abroad'];
 const cities = ['Pune', 'Bangalore', 'Delhi', 'Mumbai', 'Bhubaneswar', 'Hyderabad'];
+const whatsappCounsellors = [
+  { number: '917077183053', label: '+91 70771 83053' },
+  { number: '919827183443', label: '+91 98271 83443' },
+  { number: '917008551071', label: '+91 70085 51071' }
+];
 const whatsappMessage = encodeURIComponent(
   'Hello Future Plus Education, I would like to speak with a counsellor about courses, colleges and admissions.'
 );
@@ -22,16 +27,24 @@ export default function HomePage() {
           <h1>Your pathway to the right course, college and career.</h1>
           <p>Personalised counselling, transparent admissions support and access to trusted institutions across India and abroad.</p>
           <div className="actions contact-actions">
-            <a
-              href={`https://wa.me/917008551071?text=${whatsappMessage}`}
-              target="_blank"
-              rel="noreferrer"
-              className="contact-button whatsapp-button"
-              aria-label="Talk to a counsellor on WhatsApp"
-            >
-              <img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt="" aria-hidden="true" />
-              <span><small>WhatsApp</small>Talk to a counsellor</span>
-            </a>
+            <details className="whatsapp-menu">
+              <summary className="contact-button whatsapp-button" aria-label="Choose a counsellor on WhatsApp">
+                <img src="https://cdn.simpleicons.org/whatsapp/ffffff" alt="" aria-hidden="true" />
+                <span><small>WhatsApp</small>Choose a counsellor</span>
+              </summary>
+              <div className="whatsapp-recipient-list">
+                {whatsappCounsellors.map((counsellor) => (
+                  <a
+                    href={`https://wa.me/${counsellor.number}?text=${whatsappMessage}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    key={counsellor.number}
+                  >
+                    Message {counsellor.label}
+                  </a>
+                ))}
+              </div>
+            </details>
             <a
               href={`mailto:enquiry@futureplusedus.com?subject=${emailSubject}&body=${emailBody}`}
               className="contact-button email-button"
