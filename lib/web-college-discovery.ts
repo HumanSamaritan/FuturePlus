@@ -171,7 +171,6 @@ function messageText(content: unknown) {
 
 async function formatGroqSearchEvidence(
   apiKey: string,
-  originalPrompt: string,
   evidence: string
 ) {
   const model = clean(process.env.GROQ_MODEL) || 'llama-3.1-8b-instant';
@@ -182,16 +181,24 @@ async function formatGroqSearchEvidence(
       model,
       messages: [{
         role: 'user',
-        content: `${originalPrompt}
+        content: `Convert the web-search evidence below into JSON for Future Plus.
 
-Use only the following web-search evidence. Return a JSON object with one key named "results"; its value must be the requested array. Use null for unsupported fields.
+Return only {"results":[...]}. Return at most 6 course-level rows.
+Each row must contain:
+college_name, course_name, subject_area, duration, total_fee, placement_count,
+highest_package, average_package, currency, city, state, poc_name, poc_email,
+hostel_available, source_url, additional_sources.
+
+Use only the evidence. Do not infer missing facts. Use null for unsupported
+values. Fees and placement packages must be numeric INR values. source_url must
+be a relevant HTTP(S) URL and additional_sources must be an array of URLs.
 
 WEB SEARCH EVIDENCE:
-${evidence.slice(0, 24000)}`
+${evidence.slice(0, 5500)}`
       }],
       response_format: { type: 'json_object' },
       temperature: 0.1,
-      max_completion_tokens: 5000
+      max_completion_tokens: 2600
     })
   });
   const responseText = await response.text();
@@ -255,7 +262,6 @@ async function discoverWithGroq(prompt: string) {
     if (toolEvidence !== '[]') {
       return formatGroqSearchEvidence(
         apiKey,
-        prompt,
         `${directContent ? `COMPOUND RESPONSE:\n${directContent}\n\n` : ''}EXECUTED TOOLS:\n${toolEvidence}`
       );
     }
@@ -264,7 +270,6 @@ async function discoverWithGroq(prompt: string) {
     if (reasoningEvidence) {
       return formatGroqSearchEvidence(
         apiKey,
-        prompt,
         `${directContent ? `COMPOUND RESPONSE:\n${directContent}\n\n` : ''}REASONING:\n${reasoningEvidence}`
       );
     }
