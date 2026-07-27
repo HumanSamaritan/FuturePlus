@@ -85,7 +85,7 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
         <pre>{student.ai_summary || 'No summary generated yet.'}</pre>
         <form action={regenerateCounsellingSummaryAction}>
           <input type="hidden" name="studentId" value={student.id} />
-          <button className="secondary-button" type="submit">Regenerate Gemini review</button>
+          <button className="secondary-button" type="submit">Regenerate AI Insights</button>
         </form>
       </div>
 

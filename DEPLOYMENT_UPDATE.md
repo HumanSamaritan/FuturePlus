@@ -22,12 +22,19 @@ not make the database public; unauthenticated requests remain blocked by RLS.
 3. Confirm these Vercel environment variables are present:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-   - `OPENAI_API_KEY` (optional)
-   - `OPENAI_MODEL` (optional)
+   - `AI_PROVIDERS` (for example: `groq,gemini,openrouter,deepseek`)
+   - A server-only key for every enabled provider, such as `GROQ_API_KEY`,
+     `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, and `DEEPSEEK_API_KEY`
+   - The matching optional model variables: `GROQ_MODEL`, `GEMINI_MODEL`,
+     `OPENROUTER_MODEL`, and `DEEPSEEK_MODEL`
 4. Redeploy in Vercel without the previous build cache.
 5. In Supabase **Authentication > URL Configuration**, confirm the exact
    production URL ending in `/auth/callback` is listed.
 6. Test in a private browser window.
+
+See `AI_PROVIDER_SETUP.md` for key-generation instructions and alternative
+Gemini, OpenRouter, and DeepSeek configurations. Existing `GEMINI_API_KEY` and
+`GEMINI_MODEL` variables remain supported for backward compatibility.
 
 The Google sign-in is initiated through `/auth/login`, which creates the PKCE
 verifier on the server before redirecting to Google. The callback then exchanges
