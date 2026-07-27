@@ -134,7 +134,7 @@ function buildPrompt(student: StudentInput) {
   return `Search the live web for up to 6 Indian universities or colleges that fit this student.
 Prefer official institution, UGC, AICTE, NAAC or NIRF sources.
 
-Return only:
+Return only a valid json object (JSON) in this exact structure:
 {"results":[{"college_name":"", "city":null, "state":null, "fit_level":"Strong|Good|Moderate|Exploratory", "fit_feedback":"one short sentence", "source_url":"https://..."}]}
 
 Do not invent missing facts. Keep feedback under 35 words.
@@ -150,12 +150,13 @@ async function formatGroqEvidence(apiKey: string, evidence: string) {
       model,
       messages: [{
         role: 'user',
-        content: `Convert this search evidence to {"results":[...]}. Return at most 6 rows with only college_name, city, state, fit_level, fit_feedback and source_url. Use only supplied evidence.\n${evidence.slice(0, 3000)}`
+        content: `Return a valid json object (JSON) in the form {"results":[...]}. Convert this search evidence into at most 6 rows with only college_name, city, state, fit_level, fit_feedback and source_url. Use only supplied evidence.\n${evidence.slice(0, 3000)}`
       }],
       response_format: { type: 'json_object' },
       temperature: 0.1,
       max_completion_tokens: 1200
-    })
+    }),
+    signal: AbortSignal.timeout(20000)
   });
   const responseText = await response.text();
   if (!response.ok) throw new Error(`Groq formatter HTTP ${response.status}: ${responseText.replace(/\s+/g, ' ').slice(0, 250)}`);
@@ -179,7 +180,8 @@ async function searchGroq(prompt: string) {
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
       max_completion_tokens: 1400
-    })
+    }),
+    signal: AbortSignal.timeout(25000)
   });
   const responseText = await response.text();
   if (!response.ok) throw new Error(`Groq web search HTTP ${response.status}: ${responseText.replace(/\s+/g, ' ').slice(0, 250)}`);
@@ -250,6 +252,12 @@ export async function discoverWebCollegeInsights(
   status: { searched_at: string; providers: ProviderStatus[]; result_count: number };
 }> {
   const prompt = buildPrompt(student);
+  const enabledProviders = new Set(
+    (clean(process.env.WEB_DISCOVERY_PROVIDERS) || 'groq')
+      .split(',')
+      .map((provider) => provider.trim().toLowerCase())
+      .filter(Boolean)
+  );
   const searches = [
     { provider: 'groq-web', configured: Boolean(providerKey('groq')), run: () => searchGroq(prompt) },
     { provider: 'gemini-search', configured: Boolean(providerKey('gemini')), run: () => searchGemini(prompt) },
@@ -258,7 +266,7 @@ export async function discoverWebCollegeInsights(
       configured: Boolean(providerKey('openrouter') && clean(process.env.OPENROUTER_WEB_SEARCH) === 'true'),
       run: () => searchOpenRouter(prompt)
     }
-  ];
+  ].filter((search) => enabledProviders.has(search.provider.replace(/-web$|-search$/, '')));
   const responses = await Promise.all(searches.map(async (search) => {
     if (!search.configured) return { ...search, text: null, error: null };
     try {
