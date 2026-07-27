@@ -155,6 +155,57 @@ Student requirement:
 ${JSON.stringify(discoveryProfile)}`;
 }
 
+function messageText(content: unknown) {
+  if (typeof content === 'string') return content.trim();
+  if (Array.isArray(content)) {
+    return content.map((part) => {
+      if (typeof part === 'string') return part;
+      if (part && typeof part === 'object' && 'text' in part) {
+        return String((part as { text?: unknown }).text || '');
+      }
+      return '';
+    }).join('').trim();
+  }
+  return '';
+}
+
+async function formatGroqSearchEvidence(
+  apiKey: string,
+  originalPrompt: string,
+  evidence: string
+) {
+  const model = clean(process.env.GROQ_MODEL) || 'llama-3.1-8b-instant';
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model,
+      messages: [{
+        role: 'user',
+        content: `${originalPrompt}
+
+Use only the following web-search evidence. Return a JSON object with one key named "results"; its value must be the requested array. Use null for unsupported fields.
+
+WEB SEARCH EVIDENCE:
+${evidence.slice(0, 24000)}`
+      }],
+      response_format: { type: 'json_object' },
+      temperature: 0.1,
+      max_completion_tokens: 5000
+    })
+  });
+  const responseText = await response.text();
+  if (!response.ok) {
+    throw new Error(
+      `Groq evidence formatting HTTP ${response.status}: ${responseText.replace(/\s+/g, ' ').slice(0, 300)}`
+    );
+  }
+  const data = JSON.parse(responseText) as {
+    choices?: Array<{ message?: { content?: unknown } }>;
+  };
+  return messageText(data.choices?.[0]?.message?.content);
+}
+
 async function discoverWithGroq(prompt: string) {
   const apiKey = providerKey('groq');
   if (!apiKey) return null;
@@ -177,8 +228,41 @@ async function discoverWithGroq(prompt: string) {
       if (response.status === 413 && model !== 'groq/compound-mini') continue;
       throw new Error(`Groq web search ${lastError}`);
     }
-    const data = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
-    return data.choices?.[0]?.message?.content || null;
+    const data = await response.json() as {
+      choices?: Array<{
+        finish_reason?: string;
+        message?: {
+          content?: unknown;
+          executed_tools?: unknown[];
+          reasoning?: unknown;
+        };
+      }>;
+    };
+    const choice = data.choices?.[0];
+    const directContent = messageText(choice?.message?.content);
+    if (directContent && extractJsonArray(directContent).length) return directContent;
+
+    const toolEvidence = JSON.stringify(choice?.message?.executed_tools || []);
+    if (toolEvidence !== '[]') {
+      return formatGroqSearchEvidence(
+        apiKey,
+        prompt,
+        `${directContent ? `COMPOUND RESPONSE:\n${directContent}\n\n` : ''}EXECUTED TOOLS:\n${toolEvidence}`
+      );
+    }
+
+    const reasoningEvidence = messageText(choice?.message?.reasoning);
+    if (reasoningEvidence) {
+      return formatGroqSearchEvidence(
+        apiKey,
+        prompt,
+        `${directContent ? `COMPOUND RESPONSE:\n${directContent}\n\n` : ''}REASONING:\n${reasoningEvidence}`
+      );
+    }
+
+    throw new Error(
+      `Groq returned no parseable result or usable search evidence (finish reason: ${choice?.finish_reason || 'unknown'}).`
+    );
   }
   throw new Error(`Groq web search failed: ${lastError}`);
 }
