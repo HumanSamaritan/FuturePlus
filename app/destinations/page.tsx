@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { DESTINATIONS } from '@/lib/public-content';
+import { DESTINATIONS } from '@/lib/constants';
 
 export default function DestinationsPage() {
   return (

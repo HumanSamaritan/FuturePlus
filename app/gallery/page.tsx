@@ -1,4 +1,4 @@
-import { GALLERY_IMAGES } from '@/lib/public-content';
+import { GALLERY_IMAGES } from '@/lib/constants';
 
 export default function GalleryPage() {
   return (
