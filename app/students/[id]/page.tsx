@@ -1,4 +1,5 @@
 import ScorePill from '@/components/ScorePill';
+import Link from 'next/link';
 import { STUDENT_STATUS } from '@/lib/constants';
 import { getCourseCatalog } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
@@ -86,7 +87,10 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
         <pre>{student.ai_summary || 'No summary generated yet.'}</pre>
         <form action={regenerateCounsellingSummaryAction}>
           <input type="hidden" name="studentId" value={student.id} />
-          <button className="secondary-button" type="submit">Regenerate AI Insights</button>
+          <div className="actions">
+            <Link className="secondary-button" href={`/students/${student.id}/edit`}>Edit Student</Link>
+            <button className="primary-button" type="submit">Regenerate AI Insights</button>
+          </div>
         </form>
       </div>
 

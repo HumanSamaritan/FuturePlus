@@ -299,6 +299,86 @@ export async function updateStudentStatusAction(formData: FormData) {
   revalidatePath('/dashboard');
 }
 
+export async function updateStudentProfileAction(formData: FormData) {
+  const supabase = await createClient();
+  const studentId = String(formData.get('studentId') || '');
+  const firstName = String(formData.get('firstName') || '').trim();
+  const lastName = String(formData.get('lastName') || '').trim();
+  if (!studentId || !firstName || !lastName) {
+    throw new Error('Student ID, first name and last name are required.');
+  }
+
+  const numberOrNull = (key: string) => {
+    const value = String(formData.get(key) || '').trim();
+    if (!value) return null;
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) throw new Error(`${key} must be a valid number.`);
+    return parsed;
+  };
+  const budgetMin = numberOrNull('budgetMin');
+  const budgetMax = numberOrNull('budgetMax');
+  if (budgetMin != null && budgetMax != null && budgetMin > budgetMax) {
+    throw new Error('Minimum total course cost cannot be higher than the maximum.');
+  }
+
+  const semesterMarks: Record<string, number> = {};
+  for (let semester = 1; semester <= 12; semester += 1) {
+    const value = String(formData.get(`semester${semester}Marks`) || '').trim();
+    if (value) semesterMarks[`semester_${semester}`] = Number(value);
+  }
+  const belowPovertyLine = formData.get('belowPovertyLine') === 'yes';
+  const updates = {
+    first_name: firstName,
+    last_name: lastName,
+    email: String(formData.get('email') || '').trim() || null,
+    phone: String(formData.get('phone') || '').trim() || null,
+    year_x: numberOrNull('yearX'),
+    marks_x: numberOrNull('marksX'),
+    year_xii: numberOrNull('yearXii'),
+    marks_xii: numberOrNull('marksXii'),
+    board: String(formData.get('board') || '').trim() || null,
+    city: String(formData.get('city') || '').trim() || null,
+    state: String(formData.get('state') || '').trim() || null,
+    country: String(formData.get('country') || '').trim() || 'India',
+    target_intake: String(formData.get('targetIntake') || '').trim() || null,
+    subjects_interest: getMulti(formData, 'subjectsInterest'),
+    preferred_locations: getMulti(formData, 'preferredLocations'),
+    budget_min: budgetMin,
+    budget_max: budgetMax,
+    salary_expectation: numberOrNull('salaryExpectation'),
+    hostel_required: formData.get('hostelRequired') === 'yes',
+    loan_required: formData.get('loanRequired') === 'yes',
+    below_poverty_line: belowPovertyLine,
+    financial_aid_required: belowPovertyLine,
+    support_required: getMulti(formData, 'supportRequired'),
+    passion: String(formData.get('passion') || '').trim() || null,
+    purpose: String(formData.get('purpose') || '').trim() || null,
+    strengths: String(formData.get('strengths') || '').trim() || null,
+    constraints: String(formData.get('constraints') || '').trim() || null,
+    career_goals: String(formData.get('careerGoals') || '').trim() || null,
+    notes: String(formData.get('notes') || '').trim() || null,
+    undergraduate_degree: String(formData.get('undergraduateDegree') || '').trim() || null,
+    undergraduate_specialisation: String(formData.get('undergraduateSpecialisation') || '').trim() || null,
+    undergraduate_university: String(formData.get('undergraduateUniversity') || '').trim() || null,
+    undergraduate_graduation_year: numberOrNull('undergraduateGraduationYear'),
+    pg_applicant_status: String(formData.get('pgApplicantStatus') || '').trim() || null,
+    semesters_completed: numberOrNull('semestersCompleted'),
+    semester_marks: semesterMarks,
+    undergraduate_final_percentage: numberOrNull('undergraduateFinalPercentage'),
+    current_employer: String(formData.get('currentEmployer') || '').trim() || null,
+    current_job_title: String(formData.get('currentJobTitle') || '').trim() || null,
+    work_experience_months: numberOrNull('workExperienceMonths'),
+    updated_at: new Date().toISOString()
+  };
+
+  const { error } = await supabase.from('students').update(updates).eq('id', studentId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/students/${studentId}`);
+  revalidatePath('/dashboard');
+  redirect(`/students/${studentId}`);
+}
+
 export async function regenerateCounsellingSummaryAction(formData: FormData) {
   const supabase = await createClient();
   const studentId = String(formData.get('studentId') || '');
