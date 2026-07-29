@@ -19,33 +19,63 @@ async function requireAdmin() {
   return { supabase, user };
 }
 
+async function submitDeletionRequest(input: {
+  targetType: 'student' | 'university_programme';
+  targetId: string;
+  programLevel: 'undergraduate' | 'postgraduate' | null;
+  targetName: string;
+}) {
+  const { supabase, user } = await requireUser();
+  const { error: rpcError } = await supabase.rpc('submit_deletion_request', {
+    p_target_type: input.targetType,
+    p_target_id: input.targetId,
+    p_program_level: input.programLevel,
+    p_target_name: input.targetName
+  });
+  if (!rpcError) return null;
+
+  const functionUnavailable =
+    rpcError.code === 'PGRST202' ||
+    rpcError.code === '42883' ||
+    /submit_deletion_request|schema cache/i.test(rpcError.message);
+  if (!functionUnavailable) return rpcError.message;
+
+  const { error: insertError } = await supabase.from('deletion_requests').insert({
+    target_type: input.targetType,
+    target_id: input.targetId,
+    program_level: input.programLevel,
+    target_name: input.targetName,
+    requested_by: user.id,
+    requested_by_email: user.email
+  });
+  return insertError?.message || null;
+}
+
 export async function requestUniversityDeletionAction(formData: FormData) {
-  const { supabase } = await requireUser();
   const collegeId = z.string().uuid().parse(formData.get('collegeId'));
   const programLevel = z.enum(['undergraduate', 'postgraduate']).parse(formData.get('programLevel'));
   const targetName = z.string().min(1).parse(formData.get('targetName'));
-  const { error } = await supabase.rpc('submit_deletion_request', {
-    p_target_type: 'university_programme',
-    p_target_id: collegeId,
-    p_program_level: programLevel,
-    p_target_name: targetName
+  const error = await submitDeletionRequest({
+    targetType: 'university_programme',
+    targetId: collegeId,
+    programLevel,
+    targetName
   });
-  if (error) throw new Error(error.code === '23505' ? 'A pending deletion request already exists for this university row.' : error.message);
+  if (error) redirect(`/colleges?deletionError=${encodeURIComponent(error)}`);
   revalidatePath('/admin');
   redirect(`/colleges?deletionRequested=${Date.now()}`);
 }
 
 export async function requestStudentDeletionAction(formData: FormData) {
-  const { supabase } = await requireUser();
   const studentId = z.string().uuid().parse(formData.get('studentId'));
   const targetName = z.string().min(1).parse(formData.get('targetName'));
-  const { error } = await supabase.rpc('submit_deletion_request', {
-    p_target_type: 'student',
-    p_target_id: studentId,
-    p_program_level: null,
-    p_target_name: targetName
+  const error = await submitDeletionRequest({
+    targetType: 'student',
+    targetId: studentId,
+    programLevel: null,
+    targetName
   });
-  if (error) throw new Error(error.code === '23505' ? 'A pending deletion request already exists for this student.' : error.message);
+  if (error) redirect(`/students/${studentId}?deletionError=${encodeURIComponent(error)}`);
   revalidatePath('/admin');
   redirect(`/students/${studentId}?deletionRequested=1`);
 }

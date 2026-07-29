@@ -9,8 +9,15 @@ import { regenerateCounsellingSummaryAction, updateStudentStatusAction } from '.
 import { requestStudentDeletionAction } from '@/app/admin/deletion-actions';
 import RequestStudentDeletionButton from '@/components/RequestStudentDeletionButton';
 
-export default async function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function StudentDetailPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ deletionRequested?: string; deletionError?: string }>;
+}) {
   const { id } = await params;
+  const { deletionRequested, deletionError } = await searchParams;
   const supabase = await createClient();
 
   const [{ data: student, error: studentError }, { data: recommendations, error: recError }, courses] = await Promise.all([
@@ -57,6 +64,8 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
           /> : null}
         </div>
       </div>
+      {deletionRequested ? <p className="success-message">Deletion request sent to the Super User for approval.</p> : null}
+      {deletionError ? <p className="alert"><strong>Deletion request was not submitted:</strong> {deletionError}</p> : null}
 
       <div className="grid grid-2">
         <div className="card">

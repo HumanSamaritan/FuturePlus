@@ -30,9 +30,9 @@ function groupUniversities(courses: CourseWithCollege[]): UniversityGroup[] {
 export default async function CollegesPage({
   searchParams
 }: {
-  searchParams: Promise<{ imported?: string; saved?: string; deleted?: string; deletionRequested?: string }>;
+  searchParams: Promise<{ imported?: string; saved?: string; deleted?: string; deletionRequested?: string; deletionError?: string }>;
 }) {
-  const { imported, saved, deleted, deletionRequested } = await searchParams;
+  const { imported, saved, deleted, deletionRequested, deletionError } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = user
@@ -70,6 +70,7 @@ export default async function CollegesPage({
         {saved ? <p className="success-message">University and course changes saved successfully.</p> : null}
         {deleted ? <p className="success-message">University and all associated courses were deleted successfully.</p> : null}
         {deletionRequested ? <p className="success-message">Deletion request sent to the Super User for approval.</p> : null}
+        {deletionError ? <p className="alert"><strong>Deletion request was not submitted:</strong> {deletionError}</p> : null}
         {catalogueError ? <p className="alert">Universities could not be loaded. Please check the server log using reference {catalogueError} and confirm all database migrations are applied.</p> : null}
         <p className="muted">
           Each university appears once in each programme section. Open its course selector to scroll through every available subject and course.
