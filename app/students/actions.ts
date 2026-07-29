@@ -11,10 +11,10 @@ import { createClient } from '@/lib/supabase/server';
 import { discoverWebCollegeInsights } from '@/lib/web-college-discovery';
 
 const StudentSchema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
-  phone: z.string().optional(),
+  phone: z.string().trim().min(7, 'A valid phone number is required'),
   yearX: z.coerce.number().int().min(1950).max(2100).optional().nullable(),
   marksX: z.coerce.number().min(0).max(100).optional().nullable(),
   yearXii: z.coerce.number().int().min(1950).max(2100).optional().nullable(),
@@ -29,9 +29,9 @@ const StudentSchema = z.object({
   budgetMin: z.coerce.number().optional().nullable(),
   budgetMax: z.coerce.number().optional().nullable(),
   salaryExpectation: z.coerce.number().optional().nullable(),
-  hostelRequired: z.enum(['yes', 'no']),
-  loanRequired: z.enum(['yes', 'no']),
-  belowPovertyLine: z.enum(['yes', 'no']),
+  hostelRequired: z.enum(['yes', 'no']).default('no'),
+  loanRequired: z.enum(['yes', 'no']).default('no'),
+  belowPovertyLine: z.enum(['yes', 'no']).default('no'),
   passion: z.string().optional(),
   purpose: z.string().optional(),
   strengths: z.string().optional(),
@@ -98,8 +98,8 @@ export async function createStudentAction(formData: FormData) {
     'Future Plus Staff';
 
   const parsed = StudentSchema.parse({
-    firstName: formData.get('firstName'),
-    lastName: formData.get('lastName'),
+    firstName: formData.get('firstName') || undefined,
+    lastName: formData.get('lastName') || undefined,
     email: formData.get('email') || undefined,
     phone: formData.get('phone') || undefined,
     yearX: formData.get('yearX') || undefined,
@@ -116,9 +116,9 @@ export async function createStudentAction(formData: FormData) {
     budgetMin: formData.get('budgetMin') || undefined,
     budgetMax: formData.get('budgetMax') || undefined,
     salaryExpectation: formData.get('salaryExpectation') || undefined,
-    hostelRequired: formData.get('hostelRequired'),
-    loanRequired: formData.get('loanRequired'),
-    belowPovertyLine: formData.get('belowPovertyLine'),
+    hostelRequired: formData.get('hostelRequired') || 'no',
+    loanRequired: formData.get('loanRequired') || 'no',
+    belowPovertyLine: formData.get('belowPovertyLine') || 'no',
     passion: formData.get('passion') || undefined,
     purpose: formData.get('purpose') || undefined,
     strengths: formData.get('strengths') || undefined,
@@ -150,10 +150,10 @@ export async function createStudentAction(formData: FormData) {
     currentJobTitle: formData.get('currentJobTitle') || undefined,
     workExperienceMonths: formData.get('workExperienceMonths') || undefined
   });
-  if (parsed.budgetMin == null || parsed.budgetMax == null) {
+  if (parsed.programLevel === 'undergraduate' && (parsed.budgetMin == null || parsed.budgetMax == null)) {
     throw new Error('Select the minimum and maximum total course-cost budget.');
   }
-  if (parsed.budgetMin > parsed.budgetMax) {
+  if (parsed.budgetMin != null && parsed.budgetMax != null && parsed.budgetMin > parsed.budgetMax) {
     throw new Error('Minimum total course cost cannot be higher than the maximum.');
   }
 
@@ -162,22 +162,14 @@ export async function createStudentAction(formData: FormData) {
     const value = formData.get(`semester${semester}Marks`);
     if (value) semesterMarks[`semester_${semester}`] = Number(value);
   }
-  if (parsed.programLevel === 'postgraduate') {
-    if (!parsed.undergraduateDegree || !parsed.undergraduateUniversity || !parsed.pgApplicantStatus) {
-      throw new Error('Under Graduate degree, university and applicant status are required for Post Graduate intake.');
-    }
-    if (parsed.pgApplicantStatus === 'final_semester' && !Object.keys(semesterMarks).length) {
-      throw new Error('Enter all available semester percentage results for a final-semester applicant.');
-    }
-    if (
-      ['passed_out', 'working_professional'].includes(parsed.pgApplicantStatus) &&
-      parsed.undergraduateFinalPercentage == null
-    ) {
-      throw new Error('Final graduation percentage is required for passed-out applicants and working professionals.');
-    }
+  if (parsed.programLevel === 'undergraduate' && (!parsed.firstName || !parsed.lastName)) {
+    throw new Error('First name and last name are required for Under Graduate intake.');
   }
+  const leadSuffix = parsed.phone.replace(/\D/g, '').slice(-4) || 'New';
   const student = {
     ...parsed,
+    firstName: parsed.firstName || 'Post Graduate',
+    lastName: parsed.lastName || `Lead ${leadSuffix}`,
     hostelRequired: parsed.hostelRequired === 'yes',
     loanRequired: parsed.loanRequired === 'yes',
     belowPovertyLine: parsed.belowPovertyLine === 'yes',

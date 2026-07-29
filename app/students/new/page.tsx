@@ -56,8 +56,8 @@ export default async function NewStudentPage() {
               <input id="email" name="email" type="email" />
             </div>
             <div className="field">
-              <label htmlFor="phone">Phone</label>
-              <input id="phone" name="phone" />
+              <label htmlFor="phone">Phone *</label>
+              <input id="phone" name="phone" type="tel" required />
             </div>
             <div className="field">
               <label htmlFor="board">Board / curriculum</label>

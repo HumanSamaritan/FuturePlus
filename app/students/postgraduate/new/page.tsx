@@ -47,10 +47,10 @@ export default function NewPostgraduateStudentPage() {
         <div className="form-section">
           <h2>1. Applicant details</h2>
           <div className="grid grid-2">
-            <div className="field"><label htmlFor="firstName">First name *</label><input id="firstName" name="firstName" required /></div>
-            <div className="field"><label htmlFor="lastName">Last name *</label><input id="lastName" name="lastName" required /></div>
+            <div className="field"><label htmlFor="firstName">First name</label><input id="firstName" name="firstName" /></div>
+            <div className="field"><label htmlFor="lastName">Last name</label><input id="lastName" name="lastName" /></div>
             <div className="field"><label htmlFor="email">Email</label><input id="email" name="email" type="email" /></div>
-            <div className="field"><label htmlFor="phone">Phone</label><input id="phone" name="phone" /></div>
+            <div className="field"><label htmlFor="phone">Phone *</label><input id="phone" name="phone" type="tel" required /></div>
             <div className="field"><label htmlFor="city">Current city</label><input id="city" name="city" /></div>
             <div className="field"><label htmlFor="country">Country</label><input id="country" name="country" defaultValue="India" /></div>
           </div>
@@ -63,21 +63,21 @@ export default function NewPostgraduateStudentPage() {
             <div className="field"><label htmlFor="marksX">Marks in X (%)</label><input id="marksX" name="marksX" type="number" min="0" max="100" step=".01" /></div>
             <div className="field"><label htmlFor="yearXii">Year for XII</label><input id="yearXii" name="yearXii" type="number" min="1950" max="2100" /></div>
             <div className="field"><label htmlFor="marksXii">Marks in XII (%)</label><input id="marksXii" name="marksXii" type="number" min="0" max="100" step=".01" /></div>
-            <div className="field"><label htmlFor="undergraduateDegree">Under Graduate degree *</label><input id="undergraduateDegree" name="undergraduateDegree" placeholder="B.Tech, BBA, B.Com, B.Sc..." required /></div>
+            <div className="field"><label htmlFor="undergraduateDegree">Under Graduate degree</label><input id="undergraduateDegree" name="undergraduateDegree" placeholder="B.Tech, BBA, B.Com, B.Sc..." /></div>
             <div className="field"><label htmlFor="undergraduateSpecialisation">Specialisation</label><input id="undergraduateSpecialisation" name="undergraduateSpecialisation" /></div>
-            <div className="field"><label htmlFor="undergraduateUniversity">College / University *</label><input id="undergraduateUniversity" name="undergraduateUniversity" required /></div>
-            <div className="field"><label htmlFor="undergraduateGraduationYear">Graduation / expected year *</label><input id="undergraduateGraduationYear" name="undergraduateGraduationYear" type="number" min="1950" max="2100" required /></div>
+            <div className="field"><label htmlFor="undergraduateUniversity">College / University</label><input id="undergraduateUniversity" name="undergraduateUniversity" /></div>
+            <div className="field"><label htmlFor="undergraduateGraduationYear">Graduation / expected year</label><input id="undergraduateGraduationYear" name="undergraduateGraduationYear" type="number" min="1950" max="2100" /></div>
             <div className="field">
-              <label htmlFor="pgApplicantStatus">Applicant status *</label>
-              <select id="pgApplicantStatus" name="pgApplicantStatus" required defaultValue="">
-                <option value="" disabled>Select status</option>
+              <label htmlFor="pgApplicantStatus">Applicant status</label>
+              <select id="pgApplicantStatus" name="pgApplicantStatus" defaultValue="">
+                <option value="">Select status</option>
                 <option value="final_semester">Final-semester student</option>
                 <option value="passed_out">Passed out / graduate</option>
                 <option value="working_professional">Working professional</option>
               </select>
             </div>
             <div className="field"><label htmlFor="semestersCompleted">Semester results available</label><input id="semestersCompleted" name="semestersCompleted" type="number" min="1" max="12" /></div>
-            <div className="field"><label htmlFor="undergraduateFinalPercentage">Final graduation marks (%)</label><input id="undergraduateFinalPercentage" name="undergraduateFinalPercentage" type="number" min="0" max="100" step=".01" /><span className="help-text">Required for passed-out applicants and working professionals.</span></div>
+            <div className="field"><label htmlFor="undergraduateFinalPercentage">Final graduation marks (%)</label><input id="undergraduateFinalPercentage" name="undergraduateFinalPercentage" type="number" min="0" max="100" step=".01" /><span className="help-text">Can be added later as the lead progresses.</span></div>
           </div>
         </div>
 
@@ -107,22 +107,22 @@ export default function NewPostgraduateStudentPage() {
         <div className="form-section">
           <h2>5. Post Graduate preference</h2>
           <div className="grid grid-2">
-            <div className="field"><label htmlFor="subjectsInterest">Post Graduate course interests *</label><select id="subjectsInterest" name="subjectsInterest" multiple required>{PG_INTERESTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
+            <div className="field"><label htmlFor="subjectsInterest">Post Graduate course interests</label><select id="subjectsInterest" name="subjectsInterest" multiple>{PG_INTERESTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
             <div className="field"><label htmlFor="preferredLocations">Preferred locations</label><select id="preferredLocations" name="preferredLocations" multiple>{INDIA_STATES_AND_REGIONS.map((item) => <option key={item}>{item}</option>)}</select></div>
             <div className="field"><label htmlFor="targetIntake">Target intake</label><input id="targetIntake" name="targetIntake" placeholder="2027 July" /></div>
             <div className="field"><label htmlFor="salaryExpectation">Expected package, INR</label><input id="salaryExpectation" name="salaryExpectation" type="number" min="0" /></div>
             <div className="field">
               <label htmlFor="budgetMin">Minimum total course cost</label>
-              <select id="budgetMin" name="budgetMin" defaultValue="" required>
-                <option value="" disabled>Select minimum budget</option>
+              <select id="budgetMin" name="budgetMin" defaultValue="">
+                <option value="">Select minimum budget</option>
                 {TOTAL_COST_BUDGET_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
               <span className="help-text">Overall Post Graduate programme cost, not per semester or year.</span>
             </div>
             <div className="field">
               <label htmlFor="budgetMax">Maximum total course cost</label>
-              <select id="budgetMax" name="budgetMax" defaultValue="" required>
-                <option value="" disabled>Select maximum budget</option>
+              <select id="budgetMax" name="budgetMax" defaultValue="">
+                <option value="">Select maximum budget</option>
                 {TOTAL_COST_BUDGET_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
               <span className="help-text">Saved in the database as a numeric INR amount.</span>
@@ -130,24 +130,24 @@ export default function NewPostgraduateStudentPage() {
           </div>
           <div className="grid grid-3 support-questions">
             <div className="field">
-              <label>Does the student require hostel facilities? *</label>
+              <label>Does the student require hostel facilities?</label>
               <div className="choice-group">
-                <label className="choice-card"><input type="radio" name="hostelRequired" value="yes" required /> Yes</label>
-                <label className="choice-card"><input type="radio" name="hostelRequired" value="no" required /> No</label>
+                <label className="choice-card"><input type="radio" name="hostelRequired" value="yes" /> Yes</label>
+                <label className="choice-card"><input type="radio" name="hostelRequired" value="no" /> No</label>
               </div>
             </div>
             <div className="field">
-              <label>Does the student require an education loan? *</label>
+              <label>Does the student require an education loan?</label>
               <div className="choice-group">
-                <label className="choice-card"><input type="radio" name="loanRequired" value="yes" required /> Yes</label>
-                <label className="choice-card"><input type="radio" name="loanRequired" value="no" required /> No</label>
+                <label className="choice-card"><input type="radio" name="loanRequired" value="yes" /> Yes</label>
+                <label className="choice-card"><input type="radio" name="loanRequired" value="no" /> No</label>
               </div>
             </div>
             <div className="field">
-              <label>Is the student from a below-poverty-line household? *</label>
+              <label>Is the student from a below-poverty-line household?</label>
               <div className="choice-group">
-                <label className="choice-card"><input type="radio" name="belowPovertyLine" value="yes" required /> Yes</label>
-                <label className="choice-card"><input type="radio" name="belowPovertyLine" value="no" required /> No</label>
+                <label className="choice-card"><input type="radio" name="belowPovertyLine" value="yes" /> Yes</label>
+                <label className="choice-card"><input type="radio" name="belowPovertyLine" value="no" /> No</label>
               </div>
               <span className="help-text">Selecting Yes automatically flags Financial Aid Required.</span>
             </div>
