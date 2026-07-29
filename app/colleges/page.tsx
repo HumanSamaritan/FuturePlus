@@ -4,6 +4,7 @@ import { updateCollegeCourseAction } from '@/app/admin/actions';
 import { requestUniversityDeletionAction } from '@/app/admin/deletion-actions';
 import { CourseWithCollege } from '@/lib/types';
 import DeleteUniversityButton from '@/components/DeleteUniversityButton';
+import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -32,6 +33,12 @@ export default async function CollegesPage({
   searchParams: Promise<{ imported?: string; saved?: string; deleted?: string; deletionRequested?: string }>;
 }) {
   const { imported, saved, deleted, deletionRequested } = await searchParams;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    : { data: null };
+  const isAdmin = profile?.role === 'admin';
   let courses: CourseWithCollege[] = [];
   let catalogueError = '';
   try {
@@ -96,7 +103,7 @@ export default async function CollegesPage({
                       <th>POC / annual review</th>
                       <th>Hostel</th>
                       <th>Future Plus Flag</th>
-                      <th>Delete</th>
+                      {!isAdmin ? <th>Deletion request</th> : null}
                     </tr>
                   </thead>
                   <tbody>
@@ -174,17 +181,17 @@ export default async function CollegesPage({
                           </span><br />
                           {university.commission_based ? 'Commission based' : 'No commission flag'}
                         </td>
-                        <td>
+                        {!isAdmin ? <td>
                           <DeleteUniversityButton
                             action={requestUniversityDeletionAction}
                             collegeId={university.college_id}
                             universityName={university.college_name}
                             programLevel={section.key as 'undergraduate' | 'postgraduate'}
                           />
-                        </td>
+                        </td> : null}
                       </tr>
                     ))}
-                    {!universities.length ? <tr><td colSpan={7}>No {section.key === 'postgraduate' ? 'Post Graduate' : 'Under Graduate'} university records yet. Use the Admin page to add or upload records.</td></tr> : null}
+                    {!universities.length ? <tr><td colSpan={isAdmin ? 6 : 7}>No {section.key === 'postgraduate' ? 'Post Graduate' : 'Under Graduate'} university records yet. Use the Admin page to add or upload records.</td></tr> : null}
                   </tbody>
                 </table>
               </div>

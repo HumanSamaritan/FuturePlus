@@ -23,6 +23,11 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
   if (recError) throw new Error(recError.message);
 
   const courseById = new Map(courses.map((course: CourseWithCollege) => [course.course_id, course]));
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    : { data: null };
+  const isAdmin = profile?.role === 'admin';
 
   return (
     <section className="grid">
@@ -45,11 +50,11 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
         </div>
         <div className="profile-header-actions">
           <Link className="primary-button profile-edit-button" href={`/students/${student.id}/edit`}>Edit Student</Link>
-          <RequestStudentDeletionButton
+          {!isAdmin ? <RequestStudentDeletionButton
             action={requestStudentDeletionAction}
             studentId={student.id}
             studentName={`${student.first_name} ${student.last_name}`}
-          />
+          /> : null}
         </div>
       </div>
 
