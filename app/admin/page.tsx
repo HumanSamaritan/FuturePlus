@@ -13,10 +13,10 @@ export default async function AdminPage({
   const { decision } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const { data: profile } = user
-    ? await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
-    : { data: null };
-  const isAdmin = profile?.role === 'admin';
+  const { data: adminCheck } = user
+    ? await supabase.rpc('is_future_plus_admin')
+    : { data: false };
+  const isAdmin = Boolean(adminCheck);
   const { data: deletionRequests } = isAdmin
     ? await supabase.from('deletion_requests').select('*').eq('status', 'pending').order('created_at')
     : { data: [] };

@@ -14,23 +14,21 @@ async function requireUser() {
 
 async function requireAdmin() {
   const { supabase, user } = await requireUser();
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-  if (profile?.role !== 'admin') throw new Error('Only a Super User can authorize deletion.');
+  const { data: isAdmin, error } = await supabase.rpc('is_future_plus_admin');
+  if (error || !isAdmin) throw new Error('Only a Super User can authorize deletion.');
   return { supabase, user };
 }
 
 export async function requestUniversityDeletionAction(formData: FormData) {
-  const { supabase, user } = await requireUser();
+  const { supabase } = await requireUser();
   const collegeId = z.string().uuid().parse(formData.get('collegeId'));
   const programLevel = z.enum(['undergraduate', 'postgraduate']).parse(formData.get('programLevel'));
   const targetName = z.string().min(1).parse(formData.get('targetName'));
-  const { error } = await supabase.from('deletion_requests').insert({
-    target_type: 'university_programme',
-    target_id: collegeId,
-    program_level: programLevel,
-    target_name: targetName,
-    requested_by: user.id,
-    requested_by_email: user.email
+  const { error } = await supabase.rpc('submit_deletion_request', {
+    p_target_type: 'university_programme',
+    p_target_id: collegeId,
+    p_program_level: programLevel,
+    p_target_name: targetName
   });
   if (error) throw new Error(error.code === '23505' ? 'A pending deletion request already exists for this university row.' : error.message);
   revalidatePath('/admin');
@@ -38,15 +36,14 @@ export async function requestUniversityDeletionAction(formData: FormData) {
 }
 
 export async function requestStudentDeletionAction(formData: FormData) {
-  const { supabase, user } = await requireUser();
+  const { supabase } = await requireUser();
   const studentId = z.string().uuid().parse(formData.get('studentId'));
   const targetName = z.string().min(1).parse(formData.get('targetName'));
-  const { error } = await supabase.from('deletion_requests').insert({
-    target_type: 'student',
-    target_id: studentId,
-    target_name: targetName,
-    requested_by: user.id,
-    requested_by_email: user.email
+  const { error } = await supabase.rpc('submit_deletion_request', {
+    p_target_type: 'student',
+    p_target_id: studentId,
+    p_program_level: null,
+    p_target_name: targetName
   });
   if (error) throw new Error(error.code === '23505' ? 'A pending deletion request already exists for this student.' : error.message);
   revalidatePath('/admin');
