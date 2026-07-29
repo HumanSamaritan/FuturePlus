@@ -1073,3 +1073,37 @@ pre {
   .wizard-progress { display: flex; overflow-x: auto; }
   .wizard-step { flex: 0 0 auto; }
 }
+.draft-autosave-status {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid #cbd9f5;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 24px rgba(15, 39, 82, 0.14);
+  color: #173b78;
+  font-size: 0.85rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.draft-autosave-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: #27a269;
+  box-shadow: 0 0 0 3px rgba(39, 162, 105, 0.14);
+}
+
+@media (max-width: 640px) {
+  .draft-autosave-status {
+    right: 12px;
+    bottom: 12px;
+  }
+}

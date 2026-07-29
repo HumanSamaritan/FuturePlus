@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import FormDraftAutoSave from '@/components/FormDraftAutoSave';
 import Header from '@/components/Header';
 import './globals.css';
 
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Header />
         <main>{children}</main>
+        <FormDraftAutoSave />
       </body>
     </html>
   );
