@@ -48,6 +48,12 @@ export default async function Header() {
           <small>Education & career ecosystem</small>
         </span>
       </Link>
+      {isStaff ? (
+        <div className="staff-identity staff-identity-top" aria-label="Signed-in staff member">
+          <span className="staff-avatar">{staffName.slice(0, 1).toUpperCase()}</span>
+          <span><strong>Welcome, {staffName}</strong><small>{staffRole} &middot; {staffEmail}</small></span>
+        </div>
+      ) : null}
       <nav>
         {isStaff ? (
           <>
@@ -94,7 +100,7 @@ export default async function Header() {
         )}
       </nav>
       {isStaff ? (
-        <div className="staff-identity" aria-label="Signed-in staff member">
+        <div className="staff-identity staff-identity-legacy" aria-hidden="true">
           <span className="staff-avatar">{staffName.slice(0, 1).toUpperCase()}</span>
           <span><strong>Welcome, {staffName}</strong><small>{staffRole} · {staffEmail}</small></span>
         </div>
