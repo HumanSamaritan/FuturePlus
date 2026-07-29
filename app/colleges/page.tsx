@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { getCourseCatalog } from '@/lib/data';
 import { updateCollegeCourseAction } from '@/app/admin/actions';
+import { requestUniversityDeletionAction } from '@/app/admin/deletion-actions';
 import { CourseWithCollege } from '@/lib/types';
+import DeleteUniversityButton from '@/components/DeleteUniversityButton';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -27,9 +29,9 @@ function groupUniversities(courses: CourseWithCollege[]): UniversityGroup[] {
 export default async function CollegesPage({
   searchParams
 }: {
-  searchParams: Promise<{ imported?: string; saved?: string }>;
+  searchParams: Promise<{ imported?: string; saved?: string; deleted?: string; deletionRequested?: string }>;
 }) {
-  const { imported, saved } = await searchParams;
+  const { imported, saved, deleted, deletionRequested } = await searchParams;
   let courses: CourseWithCollege[] = [];
   let catalogueError = '';
   try {
@@ -59,6 +61,8 @@ export default async function CollegesPage({
         <h1>Under Graduate and Post Graduate university catalogue</h1>
         {imported ? <p className="success-message">{imported} uploaded row(s) are now visible in Universities.</p> : null}
         {saved ? <p className="success-message">University and course changes saved successfully.</p> : null}
+        {deleted ? <p className="success-message">University and all associated courses were deleted successfully.</p> : null}
+        {deletionRequested ? <p className="success-message">Deletion request sent to the Super User for approval.</p> : null}
         {catalogueError ? <p className="alert">Universities could not be loaded. Please check the server log using reference {catalogueError} and confirm all database migrations are applied.</p> : null}
         <p className="muted">
           Each university appears once in each programme section. Open its course selector to scroll through every available subject and course.
@@ -92,6 +96,7 @@ export default async function CollegesPage({
                       <th>POC / annual review</th>
                       <th>Hostel</th>
                       <th>Future Plus Flag</th>
+                      <th>Delete</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -169,9 +174,17 @@ export default async function CollegesPage({
                           </span><br />
                           {university.commission_based ? 'Commission based' : 'No commission flag'}
                         </td>
+                        <td>
+                          <DeleteUniversityButton
+                            action={requestUniversityDeletionAction}
+                            collegeId={university.college_id}
+                            universityName={university.college_name}
+                            programLevel={section.key as 'undergraduate' | 'postgraduate'}
+                          />
+                        </td>
                       </tr>
                     ))}
-                    {!universities.length ? <tr><td colSpan={6}>No {section.key === 'postgraduate' ? 'Post Graduate' : 'Under Graduate'} university records yet. Use the Admin page to add or upload records.</td></tr> : null}
+                    {!universities.length ? <tr><td colSpan={7}>No {section.key === 'postgraduate' ? 'Post Graduate' : 'Under Graduate'} university records yet. Use the Admin page to add or upload records.</td></tr> : null}
                   </tbody>
                 </table>
               </div>

@@ -164,7 +164,7 @@ export async function updateCollegeCourseAction(formData: FormData) {
   revalidatePath('/colleges');
   revalidatePath('/admin');
   revalidatePath('/dashboard');
-  redirect('/colleges?saved=1');
+  redirect(`/colleges?saved=${Date.now()}`);
 }
 
 const optionalText = z.preprocess(

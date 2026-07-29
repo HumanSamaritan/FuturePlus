@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/server';
 import { CourseWithCollege } from '@/lib/types';
 import { WebCollegeInsight } from '@/lib/web-college-discovery';
 import { regenerateCounsellingSummaryAction, updateStudentStatusAction } from '../actions';
+import { requestStudentDeletionAction } from '@/app/admin/deletion-actions';
+import RequestStudentDeletionButton from '@/components/RequestStudentDeletionButton';
 
 export default async function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -41,7 +43,14 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
           <span>{student.assigned_staff_email || 'No staff email recorded'}</span>
         </p>
         </div>
-        <Link className="primary-button profile-edit-button" href={`/students/${student.id}/edit`}>Edit Student</Link>
+        <div className="profile-header-actions">
+          <Link className="primary-button profile-edit-button" href={`/students/${student.id}/edit`}>Edit Student</Link>
+          <RequestStudentDeletionButton
+            action={requestStudentDeletionAction}
+            studentId={student.id}
+            studentName={`${student.first_name} ${student.last_name}`}
+          />
+        </div>
       </div>
 
       <div className="grid grid-2">

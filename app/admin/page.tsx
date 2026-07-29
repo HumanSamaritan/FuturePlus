@@ -2,10 +2,64 @@ import SubmitButton from '@/components/SubmitButton';
 import { DEFAULT_SUBJECT_AREAS, INDIA_STATES_AND_REGIONS } from '@/lib/constants';
 import { addCollegeCourseAction } from './actions';
 import CollegeImport from '@/components/CollegeImport';
+import { createClient } from '@/lib/supabase/server';
+import { decideDeletionRequestAction } from './deletion-actions';
 
-export default function AdminPage() {
+export default async function AdminPage({
+  searchParams
+}: {
+  searchParams: Promise<{ decision?: string }>;
+}) {
+  const { decision } = await searchParams;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    : { data: null };
+  const isAdmin = profile?.role === 'admin';
+  const { data: deletionRequests } = isAdmin
+    ? await supabase.from('deletion_requests').select('*').eq('status', 'pending').order('created_at')
+    : { data: [] };
+
   return (
     <section className="grid">
+      {isAdmin ? (
+        <div className="table-card">
+          <span className="kicker">Super User approval</span>
+          <h2>Pending deletion requests</h2>
+          {decision ? <p className="success-message">Deletion request {decision}.</p> : null}
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Record</th><th>Type</th><th>Requested by</th><th>Requested</th><th>Decision</th></tr></thead>
+              <tbody>
+                {(deletionRequests ?? []).map((request) => (
+                  <tr key={request.id}>
+                    <td><strong>{request.target_name}</strong></td>
+                    <td>{request.target_type.replaceAll('_', ' ')}</td>
+                    <td>{request.requested_by_email || request.requested_by}</td>
+                    <td>{new Date(request.created_at).toLocaleString('en-IN')}</td>
+                    <td>
+                      <div className="deletion-decision-actions">
+                        <form action={decideDeletionRequestAction}>
+                          <input type="hidden" name="requestId" value={request.id} />
+                          <input type="hidden" name="decision" value="approved" />
+                          <button className="danger-button" type="submit">Approve deletion</button>
+                        </form>
+                        <form action={decideDeletionRequestAction}>
+                          <input type="hidden" name="requestId" value={request.id} />
+                          <input type="hidden" name="decision" value="rejected" />
+                          <button className="secondary-button" type="submit">Reject</button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {!deletionRequests?.length ? <tr><td colSpan={5}>No deletion requests are awaiting approval.</td></tr> : null}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
       <div className="form-card">
       <span className="kicker">Admin Data Entry</span>
       <h1>Add college and course data</h1>
