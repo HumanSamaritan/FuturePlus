@@ -850,6 +850,14 @@ tr:hover td {
 }
 .course-option p { margin: 10px 0; }
 .financial-aid-flag { color: #9f1239; background: #fff1f2; }
+.student-profile-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+.student-profile-header > div { min-width: 0; }
+.profile-edit-button { flex: 0 0 auto; }
 .intake-wizard { gap: 22px; }
 .wizard-progress {
   display: grid;

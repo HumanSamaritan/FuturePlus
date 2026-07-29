@@ -47,8 +47,8 @@ export default function NewPostgraduateStudentPage() {
         <div className="form-section">
           <h2>1. Applicant details</h2>
           <div className="grid grid-2">
-            <div className="field"><label htmlFor="firstName">First name</label><input id="firstName" name="firstName" /></div>
-            <div className="field"><label htmlFor="lastName">Last name</label><input id="lastName" name="lastName" /></div>
+            <div className="field"><label htmlFor="firstName">First name *</label><input id="firstName" name="firstName" required /></div>
+            <div className="field"><label htmlFor="lastName">Last name *</label><input id="lastName" name="lastName" required /></div>
             <div className="field"><label htmlFor="email">Email</label><input id="email" name="email" type="email" /></div>
             <div className="field"><label htmlFor="phone">Phone *</label><input id="phone" name="phone" type="tel" required /></div>
             <div className="field"><label htmlFor="city">Current city</label><input id="city" name="city" /></div>
@@ -107,22 +107,22 @@ export default function NewPostgraduateStudentPage() {
         <div className="form-section">
           <h2>5. Post Graduate preference</h2>
           <div className="grid grid-2">
-            <div className="field"><label htmlFor="subjectsInterest">Post Graduate course interests</label><select id="subjectsInterest" name="subjectsInterest" multiple>{PG_INTERESTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
-            <div className="field"><label htmlFor="preferredLocations">Preferred locations</label><select id="preferredLocations" name="preferredLocations" multiple>{INDIA_STATES_AND_REGIONS.map((item) => <option key={item}>{item}</option>)}</select></div>
+            <div className="field"><label htmlFor="subjectsInterest">Post Graduate course interests *</label><select id="subjectsInterest" name="subjectsInterest" multiple required>{PG_INTERESTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
+            <div className="field"><label htmlFor="preferredLocations">Preferred locations *</label><select id="preferredLocations" name="preferredLocations" multiple required>{INDIA_STATES_AND_REGIONS.map((item) => <option key={item}>{item}</option>)}</select></div>
             <div className="field"><label htmlFor="targetIntake">Target intake</label><input id="targetIntake" name="targetIntake" placeholder="2027 July" /></div>
             <div className="field"><label htmlFor="salaryExpectation">Expected package, INR</label><input id="salaryExpectation" name="salaryExpectation" type="number" min="0" /></div>
             <div className="field">
-              <label htmlFor="budgetMin">Minimum total course cost</label>
-              <select id="budgetMin" name="budgetMin" defaultValue="">
-                <option value="">Select minimum budget</option>
+              <label htmlFor="budgetMin">Minimum total course cost *</label>
+              <select id="budgetMin" name="budgetMin" defaultValue="" required>
+                <option value="" disabled>Select minimum budget</option>
                 {TOTAL_COST_BUDGET_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
               <span className="help-text">Overall Post Graduate programme cost, not per semester or year.</span>
             </div>
             <div className="field">
-              <label htmlFor="budgetMax">Maximum total course cost</label>
-              <select id="budgetMax" name="budgetMax" defaultValue="">
-                <option value="">Select maximum budget</option>
+              <label htmlFor="budgetMax">Maximum total course cost *</label>
+              <select id="budgetMax" name="budgetMax" defaultValue="" required>
+                <option value="" disabled>Select maximum budget</option>
                 {TOTAL_COST_BUDGET_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
               <span className="help-text">Saved in the database as a numeric INR amount.</span>
@@ -152,7 +152,7 @@ export default function NewPostgraduateStudentPage() {
               <span className="help-text">Selecting Yes automatically flags Financial Aid Required.</span>
             </div>
           </div>
-          <div className="field"><label htmlFor="supportRequired">Future Plus support required</label><select id="supportRequired" name="supportRequired" multiple>{SUPPORT_OPTIONS.map((item) => <option key={item}>{item}</option>)}</select></div>
+          <div className="field"><label htmlFor="supportRequired">Future Plus support required *</label><select id="supportRequired" name="supportRequired" multiple required>{SUPPORT_OPTIONS.map((item) => <option key={item}>{item}</option>)}</select></div>
         </div>
 
         <div className="form-section">
@@ -164,6 +164,14 @@ export default function NewPostgraduateStudentPage() {
             <div className="field"><label htmlFor="constraints">Constraints</label><textarea id="constraints" name="constraints" /></div>
             <div className="field"><label htmlFor="linkedinUrl">LinkedIn</label><input id="linkedinUrl" name="linkedinUrl" type="url" /></div>
             <div className="field"><label htmlFor="portfolioUrl">Portfolio</label><input id="portfolioUrl" name="portfolioUrl" type="url" /></div>
+            <div className="field"><label htmlFor="facebookUrl">Facebook</label><input id="facebookUrl" name="facebookUrl" type="url" /></div>
+            <div className="field"><label htmlFor="instagramUrl">Instagram</label><input id="instagramUrl" name="instagramUrl" type="url" /></div>
+            <div className="field"><label htmlFor="xUrl">X profile</label><input id="xUrl" name="xUrl" type="url" /></div>
+            <div className="field"><label htmlFor="languages">Languages</label><input id="languages" name="languages" /></div>
+            <div className="field"><label htmlFor="accolades">Accolades and distinctions</label><textarea id="accolades" name="accolades" /></div>
+            <div className="field"><label htmlFor="extracurricularActivities">Extracurricular activities</label><textarea id="extracurricularActivities" name="extracurricularActivities" /></div>
+            <div className="field"><label htmlFor="rewards">Awards and rewards</label><textarea id="rewards" name="rewards" /></div>
+            <div className="field"><label htmlFor="specialSkills">Special skills</label><textarea id="specialSkills" name="specialSkills" /></div>
             <div className="field"><label htmlFor="certifications">Certifications</label><textarea id="certifications" name="certifications" /></div>
             <div className="field"><label htmlFor="notes">Staff notes</label><textarea id="notes" name="notes" /></div>
           </div>

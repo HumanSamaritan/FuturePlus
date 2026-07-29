@@ -24,9 +24,10 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
 
   return (
     <section className="grid">
-      <div className="card">
-        <span className="kicker">Student Profile</span>
-        <h1>{student.first_name} {student.last_name}</h1>
+      <div className="card student-profile-header">
+        <div>
+          <span className="kicker">Student Profile</span>
+          <h1>{student.first_name} {student.last_name}</h1>
         <p className="muted">
           {student.email || 'No email'} · {student.phone || 'No phone'} · {student.city || 'City not captured'} {student.state ? `, ${student.state}` : ''}
         </p>
@@ -39,6 +40,8 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
           <strong>Managing staff:</strong> {student.assigned_staff_name || 'Not assigned'}
           <span>{student.assigned_staff_email || 'No staff email recorded'}</span>
         </p>
+        </div>
+        <Link className="primary-button profile-edit-button" href={`/students/${student.id}/edit`}>Edit Student</Link>
       </div>
 
       <div className="grid grid-2">
@@ -88,7 +91,6 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
         <form action={regenerateCounsellingSummaryAction}>
           <input type="hidden" name="studentId" value={student.id} />
           <div className="actions">
-            <Link className="secondary-button" href={`/students/${student.id}/edit`}>Edit Student</Link>
             <button className="primary-button" type="submit">Regenerate AI Insights</button>
           </div>
         </form>

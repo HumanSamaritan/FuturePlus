@@ -150,7 +150,7 @@ export async function createStudentAction(formData: FormData) {
     currentJobTitle: formData.get('currentJobTitle') || undefined,
     workExperienceMonths: formData.get('workExperienceMonths') || undefined
   });
-  if (parsed.programLevel === 'undergraduate' && (parsed.budgetMin == null || parsed.budgetMax == null)) {
+  if (parsed.budgetMin == null || parsed.budgetMax == null) {
     throw new Error('Select the minimum and maximum total course-cost budget.');
   }
   if (parsed.budgetMin != null && parsed.budgetMax != null && parsed.budgetMin > parsed.budgetMax) {
@@ -162,14 +162,18 @@ export async function createStudentAction(formData: FormData) {
     const value = formData.get(`semester${semester}Marks`);
     if (value) semesterMarks[`semester_${semester}`] = Number(value);
   }
-  if (parsed.programLevel === 'undergraduate' && (!parsed.firstName || !parsed.lastName)) {
-    throw new Error('First name and last name are required for Under Graduate intake.');
+  if (!parsed.firstName || !parsed.lastName) {
+    throw new Error('First name and last name are required.');
   }
-  const leadSuffix = parsed.phone.replace(/\D/g, '').slice(-4) || 'New';
+  if (parsed.programLevel === 'postgraduate') {
+    if (!parsed.subjectsInterest.length) throw new Error('Select at least one Post Graduate course interest.');
+    if (!parsed.preferredLocations.length) throw new Error('Select at least one preferred location.');
+    if (!parsed.supportRequired.length) throw new Error('Select at least one Future Plus support requirement.');
+  }
   const student = {
     ...parsed,
-    firstName: parsed.firstName || 'Post Graduate',
-    lastName: parsed.lastName || `Lead ${leadSuffix}`,
+    firstName: parsed.firstName,
+    lastName: parsed.lastName,
     hostelRequired: parsed.hostelRequired === 'yes',
     loanRequired: parsed.loanRequired === 'yes',
     belowPovertyLine: parsed.belowPovertyLine === 'yes',
@@ -349,6 +353,18 @@ export async function updateStudentProfileAction(formData: FormData) {
     constraints: String(formData.get('constraints') || '').trim() || null,
     career_goals: String(formData.get('careerGoals') || '').trim() || null,
     notes: String(formData.get('notes') || '').trim() || null,
+    linkedin_url: String(formData.get('linkedinUrl') || '').trim() || null,
+    facebook_url: String(formData.get('facebookUrl') || '').trim() || null,
+    instagram_url: String(formData.get('instagramUrl') || '').trim() || null,
+    x_url: String(formData.get('xUrl') || '').trim() || null,
+    portfolio_url: String(formData.get('portfolioUrl') || '').trim() || null,
+    accolades: String(formData.get('accolades') || '').trim() || null,
+    extracurricular_activities: String(formData.get('extracurricularActivities') || '').trim() || null,
+    rewards: String(formData.get('rewards') || '').trim() || null,
+    special_skills: String(formData.get('specialSkills') || '').trim() || null,
+    certifications: String(formData.get('certifications') || '').trim() || null,
+    languages: String(formData.get('languages') || '').trim() || null,
+    work_experience: String(formData.get('workExperience') || '').trim() || null,
     undergraduate_degree: String(formData.get('undergraduateDegree') || '').trim() || null,
     undergraduate_specialisation: String(formData.get('undergraduateSpecialisation') || '').trim() || null,
     undergraduate_university: String(formData.get('undergraduateUniversity') || '').trim() || null,

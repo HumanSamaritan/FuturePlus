@@ -34,7 +34,7 @@ export default async function EditStudentPage({ params }: { params: Promise<{ id
             <div className="field"><label htmlFor="firstName">First name *</label><input id="firstName" name="firstName" required defaultValue={student.first_name} /></div>
             <div className="field"><label htmlFor="lastName">Last name *</label><input id="lastName" name="lastName" required defaultValue={student.last_name} /></div>
             <div className="field"><label htmlFor="email">Email</label><input id="email" name="email" type="email" defaultValue={student.email || ''} /></div>
-            <div className="field"><label htmlFor="phone">Phone</label><input id="phone" name="phone" defaultValue={student.phone || ''} /></div>
+            <div className="field"><label htmlFor="phone">Phone *</label><input id="phone" name="phone" type="tel" required defaultValue={student.phone || ''} /></div>
             <div className="field"><label htmlFor="city">City</label><input id="city" name="city" defaultValue={student.city || ''} /></div>
             <div className="field"><label htmlFor="state">State</label><input id="state" name="state" defaultValue={student.state || ''} /></div>
             <div className="field"><label htmlFor="country">Country</label><input id="country" name="country" defaultValue={student.country || 'India'} /></div>
@@ -104,6 +104,24 @@ export default async function EditStudentPage({ params }: { params: Promise<{ id
             </div>
           </div>
         ) : null}
+
+        <div className="form-section">
+          <h2>Student profile, achievements and digital presence</h2>
+          <div className="grid grid-2">
+            <div className="field"><label htmlFor="linkedinUrl">LinkedIn profile</label><input id="linkedinUrl" name="linkedinUrl" type="url" defaultValue={student.linkedin_url || ''} /></div>
+            <div className="field"><label htmlFor="portfolioUrl">Portfolio / GitHub / personal site</label><input id="portfolioUrl" name="portfolioUrl" type="url" defaultValue={student.portfolio_url || ''} /></div>
+            <div className="field"><label htmlFor="facebookUrl">Facebook</label><input id="facebookUrl" name="facebookUrl" type="url" defaultValue={student.facebook_url || ''} /></div>
+            <div className="field"><label htmlFor="instagramUrl">Instagram</label><input id="instagramUrl" name="instagramUrl" type="url" defaultValue={student.instagram_url || ''} /></div>
+            <div className="field"><label htmlFor="xUrl">X profile</label><input id="xUrl" name="xUrl" type="url" defaultValue={student.x_url || ''} /></div>
+            <div className="field"><label htmlFor="languages">Languages</label><input id="languages" name="languages" defaultValue={student.languages || ''} /></div>
+            <div className="field"><label htmlFor="accolades">Accolades and distinctions</label><textarea id="accolades" name="accolades" defaultValue={student.accolades || ''} /></div>
+            <div className="field"><label htmlFor="extracurricularActivities">Extracurricular activities</label><textarea id="extracurricularActivities" name="extracurricularActivities" defaultValue={student.extracurricular_activities || ''} /></div>
+            <div className="field"><label htmlFor="rewards">Awards and rewards</label><textarea id="rewards" name="rewards" defaultValue={student.rewards || ''} /></div>
+            <div className="field"><label htmlFor="specialSkills">Special skills</label><textarea id="specialSkills" name="specialSkills" defaultValue={student.special_skills || ''} /></div>
+            <div className="field"><label htmlFor="certifications">Certifications</label><textarea id="certifications" name="certifications" defaultValue={student.certifications || ''} /></div>
+            <div className="field"><label htmlFor="workExperience">Projects, internships or work experience</label><textarea id="workExperience" name="workExperience" defaultValue={student.work_experience || ''} /></div>
+          </div>
+        </div>
 
         <div className="form-section">
           <h2>Counselling profile</h2>
