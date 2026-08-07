@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { getSupabaseConfig } from '@/lib/env';
+import { getSupabaseConfig, isAllowedUserEmail } from '@/lib/env';
 
 function getPublicOrigin(request: NextRequest) {
   const forwardedHost = request.headers.get('x-forwarded-host');
@@ -13,8 +13,14 @@ function getPublicOrigin(request: NextRequest) {
   return request.nextUrl.origin;
 }
 
+function safeNext(request: NextRequest) {
+  const requested = request.nextUrl.searchParams.get('next') || '/dashboard';
+  return requested.startsWith('/') && !requested.startsWith('//') ? requested : '/dashboard';
+}
+
 export async function GET(request: NextRequest) {
   const origin = getPublicOrigin(request);
+  const next = safeNext(request);
   const pendingCookies: Array<{ name: string; value: string; options: CookieOptions }> = [];
   const { url, publishableKey } = getSupabaseConfig();
   const supabase = createServerClient(url, publishableKey, {
@@ -25,10 +31,26 @@ export async function GET(request: NextRequest) {
       }
     }
   });
+
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (user && isAllowedUserEmail(user.email)) {
+    const destination = new URL(next, origin);
+    const response = NextResponse.redirect(destination);
+    pendingCookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
+  }
+
+  const callback = new URL('/auth/callback', origin);
+  callback.searchParams.set('next', next);
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${origin}/auth/callback`,
+      redirectTo: callback.toString(),
       queryParams: {
         access_type: 'offline',
         prompt: 'select_account'
@@ -40,12 +62,13 @@ export async function GET(request: NextRequest) {
     const loginUrl = new URL('/login', origin);
     loginUrl.searchParams.set(
       'error',
-      error?.message ?? 'Supabase did not create a Google sign-in URL.'
+      error?.message ?? 'Google sign-in could not be started.'
     );
     return NextResponse.redirect(loginUrl);
   }
 
   const response = NextResponse.redirect(data.url);
   pendingCookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+  response.headers.set('Cache-Control', 'no-store');
   return response;
 }
