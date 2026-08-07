@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ReactNode } from 'react';
 import SubmitButton from '@/components/SubmitButton';
+import { emailValidationMessage, normalisePhoneNumber, phoneValidationMessage, schoolYearValidationMessage } from '@/lib/form-validation';
 
 type Props = {
   action: (formData: FormData) => void | Promise<void>;
@@ -10,48 +11,6 @@ type Props = {
   submitLabel: string;
   children: ReactNode;
 };
-
-function validateEmail(field: HTMLInputElement) {
-  const value = field.value.trim();
-  field.setCustomValidity('');
-  if (!value) return true;
-  const domain = value.split('@')[1]?.toLowerCase() || '';
-  if (!field.validity.valid || /\.cim$/i.test(domain)) {
-    field.setCustomValidity('Enter a valid email address. Please check the domain (for example, .com rather than .cim).');
-    field.reportValidity();
-    field.focus();
-    return false;
-  }
-  return true;
-}
-
-function validatePhone(field: HTMLInputElement) {
-  const value = field.value.trim();
-  field.setCustomValidity('');
-  const digits = value.replace(/\D/g, '');
-  if (!/^\+?[0-9\s()-]+$/.test(value) || digits.length < 10 || digits.length > 13) {
-    field.setCustomValidity('Enter a valid phone number containing 10 to 13 digits.');
-    field.reportValidity();
-    field.focus();
-    return false;
-  }
-  return true;
-}
-
-function validateSchoolYears(container: HTMLDivElement | null) {
-  if (!container) return true;
-  const yearX = container.querySelector<HTMLInputElement>('input[name="yearX"]');
-  const yearXii = container.querySelector<HTMLInputElement>('input[name="yearXii"]');
-  if (!yearX || !yearXii || !yearX.value || !yearXii.value) return true;
-  yearXii.setCustomValidity('');
-  if (Number(yearX.value) >= Number(yearXii.value)) {
-    yearXii.setCustomValidity('Year of passing XII must be later than the year of passing X.');
-    yearXii.reportValidity();
-    yearXii.focus();
-    return false;
-  }
-  return true;
-}
 
 export default function StudentIntakeWizard({
   action,
@@ -69,12 +28,38 @@ export default function StudentIntakeWizard({
     const fields = container?.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea');
 
     const email = container?.querySelector<HTMLInputElement>('input[name="email"]');
-    if (email && !validateEmail(email)) return false;
+    if (email) {
+      email.setCustomValidity(emailValidationMessage(email.value));
+      if (!email.checkValidity()) {
+        email.reportValidity();
+        email.focus();
+        return false;
+      }
+    }
 
     const phone = container?.querySelector<HTMLInputElement>('input[name="phone"]');
-    if (phone && !validatePhone(phone)) return false;
+    if (phone) {
+      phone.value = normalisePhoneNumber(phone.value);
+      phone.setCustomValidity(phoneValidationMessage(phone.value));
+      if (!phone.checkValidity()) {
+        phone.reportValidity();
+        phone.focus();
+        return false;
+      }
+    }
 
-    if (!validateSchoolYears(container ?? null)) return false;
+    const yearX = container?.querySelector<HTMLInputElement>('input[name="yearX"]');
+    const yearXii = container?.querySelector<HTMLInputElement>('input[name="yearXii"]');
+    if (yearX || yearXii) {
+      const message = schoolYearValidationMessage(yearX?.value || '', yearXii?.value || '');
+      yearX?.setCustomValidity('');
+      yearXii?.setCustomValidity(message);
+      if (message) {
+        yearXii?.reportValidity();
+        (yearXii || yearX)?.focus();
+        return false;
+      }
+    }
 
     const invalid = Array.from(fields ?? []).find((field) => !field.checkValidity());
     if (invalid) {
@@ -97,8 +82,35 @@ export default function StudentIntakeWizard({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function sanitisePhone(event: React.FormEvent<HTMLFormElement>) {
+    const target = event.target as HTMLInputElement;
+    if (target?.name !== 'phone') return;
+    const cleaned = normalisePhoneNumber(target.value);
+    if (target.value !== cleaned) target.value = cleaned;
+    target.setCustomValidity(phoneValidationMessage(cleaned));
+  }
+
+  function validateOnBlur(event: React.FocusEvent<HTMLFormElement>) {
+    const target = event.target as HTMLInputElement;
+    if (target?.name === 'email') {
+      target.setCustomValidity(emailValidationMessage(target.value));
+    }
+    if (target?.name === 'phone') {
+      target.value = normalisePhoneNumber(target.value);
+      target.setCustomValidity(phoneValidationMessage(target.value));
+    }
+    if (target?.name === 'yearX' || target?.name === 'yearXii') {
+      const form = event.currentTarget;
+      const x = form.elements.namedItem('yearX') as HTMLInputElement | null;
+      const xii = form.elements.namedItem('yearXii') as HTMLInputElement | null;
+      const message = schoolYearValidationMessage(x?.value || '', xii?.value || '');
+      x?.setCustomValidity('');
+      xii?.setCustomValidity(message);
+    }
+  }
+
   return (
-    <form action={action} className="intake-wizard">
+    <form action={action} className="intake-wizard" onInput={sanitisePhone} onBlur={validateOnBlur}>
       <input type="hidden" name="programLevel" value={programLevel} />
       <nav className="wizard-progress" aria-label="Intake form progress">
         {stepLabels.map((label, index) => (
