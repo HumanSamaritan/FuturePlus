@@ -5,6 +5,8 @@ import { isAllowedUserEmail } from '@/lib/env';
 import { headers } from 'next/headers';
 import { unstable_noStore as noStore } from 'next/cache';
 
+const STAFF_ROUTE_PREFIXES = ['/dashboard', '/students', '/colleges', '/admin'];
+
 export default async function Header() {
   noStore();
   const pathname = (await headers()).get('x-future-plus-pathname') || '/';
@@ -12,7 +14,11 @@ export default async function Header() {
   const {
     data: { user }
   } = await supabase.auth.getUser();
-  const isStaff = pathname !== '/' && Boolean(user && isAllowedUserEmail(user.email));
+
+  const isStaffRoute = STAFF_ROUTE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  const isApprovedStaff = Boolean(user && isAllowedUserEmail(user.email));
+  const isStaff = isStaffRoute && isApprovedStaff;
+
   let staffName = '';
   let staffEmail = '';
   let staffRole = 'Staff';
@@ -95,7 +101,7 @@ export default async function Header() {
             <Link href="/gallery">Gallery</Link>
             <Link href="/#media">Media & Updates</Link>
             <a href="https://futureplusedus.com/" target="_blank" rel="noreferrer">Corporate Website</a>
-            <Link href="/login" className="nav-login">Staff Login</Link>
+            <a href="/auth/login?next=/dashboard" className="nav-login">Staff Login</a>
           </>
         )}
       </nav>
