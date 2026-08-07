@@ -3,6 +3,18 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { getSupabaseConfig, isAllowedUserEmail } from '@/lib/env';
 
 function getPublicOrigin(request: NextRequest) {
+  if (process.env.VERCEL_ENV === 'preview' && process.env.VERCEL_BRANCH_URL) {
+    return `https://${process.env.VERCEL_BRANCH_URL}`;
+  }
+
+  if (process.env.VERCEL_ENV === 'production' && process.env.NEXT_PUBLIC_SITE_URL) {
+    try {
+      return new URL(process.env.NEXT_PUBLIC_SITE_URL).origin;
+    } catch {
+      // Fall back to request headers below.
+    }
+  }
+
   const forwardedHost = request.headers.get('x-forwarded-host');
   const forwardedProto = request.headers.get('x-forwarded-proto') ?? 'https';
 
