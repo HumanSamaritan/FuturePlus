@@ -13,11 +13,31 @@ export default async function DashboardPage({
   const endDate = /^\d{4}-\d{2}-\d{2}$/.test(params.endDate || '') ? params.endDate! : '';
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+
+  const { data: currentProfile } = user
+    ? await supabase.from('profiles').select('full_name,email,role').eq('id', user.id).maybeSingle()
+    : { data: null };
+  const isAdmin = currentProfile?.role === 'admin';
+  const staffEmail = currentProfile?.email || user?.email || '';
+  const staffName =
+    currentProfile?.full_name ||
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    staffEmail.split('@')[0] ||
+    'Future Plus Staff';
+  const roleLabel = isAdmin ? 'Super User · all staff data' : 'Staff · your registered students only';
+
   let recentStudentsQuery = supabase
     .from('students')
     .select('id, first_name, last_name, email, phone, city, state, status, score, future_plus_id, created_at, target_intake, subjects_interest, desired_program_level, financial_aid_required, created_by, assigned_staff_name, assigned_staff_email')
     .order('created_at', { ascending: false })
     .limit(200);
+  let studentCountQuery = supabase.from('students').select('*', { count: 'exact', head: true });
+
+  if (!isAdmin && user?.id) {
+    recentStudentsQuery = recentStudentsQuery.eq('created_by', user.id);
+    studentCountQuery = studentCountQuery.eq('created_by', user.id);
+  }
   if (startDate) recentStudentsQuery = recentStudentsQuery.gte('created_at', `${startDate}T00:00:00.000Z`);
   if (endDate) recentStudentsQuery = recentStudentsQuery.lte('created_at', `${endDate}T23:59:59.999Z`);
 
@@ -28,7 +48,7 @@ export default async function DashboardPage({
     { count: postGraduateCourseCount },
     { data: students, error }
   ] = await Promise.all([
-    supabase.from('students').select('*', { count: 'exact', head: true }),
+    studentCountQuery,
     supabase.from('colleges').select('*', { count: 'exact', head: true }),
     supabase.from('courses').select('*', { count: 'exact', head: true }).eq('program_level', 'undergraduate'),
     supabase.from('courses').select('*', { count: 'exact', head: true }).eq('program_level', 'postgraduate'),
@@ -46,17 +66,6 @@ export default async function DashboardPage({
     ? await supabase.from('profiles').select('id,full_name,email').in('id', creatorIds)
     : { data: [] };
   const profileById = new Map((creatorProfiles ?? []).map((profile) => [profile.id, profile]));
-  const { data: currentProfile } = user
-    ? await supabase.from('profiles').select('full_name,email,role').eq('id', user.id).maybeSingle()
-    : { data: null };
-  const staffEmail = currentProfile?.email || user?.email || '';
-  const staffName =
-    currentProfile?.full_name ||
-    user?.user_metadata?.full_name ||
-    user?.user_metadata?.name ||
-    staffEmail.split('@')[0] ||
-    'Future Plus Staff';
-  const roleLabel = currentProfile?.role === 'admin' ? 'Super User · all staff data' : 'Staff · your leads only';
 
   const onboarded = (students ?? []).filter((student) => ['admitted', 'onboarded'].includes(student.status)).length;
 
@@ -77,18 +86,20 @@ export default async function DashboardPage({
       </div>
 
       <div className="dashboard-grid">
-        <StatCard label="Students" value={studentCount ?? 0} helper="All intake records" />
+        <StatCard label="Students" value={studentCount ?? 0} helper={isAdmin ? 'All intake records' : 'Students registered by you'} />
         <StatCard label="Universities" value={collegeCount ?? 0} helper="Partner and non-partner institutions" />
         <StatCard label="Under Graduate Courses" value={underGraduateCourseCount ?? 0} helper="Under Graduate catalogue records" />
         <StatCard label="Post Graduate Courses" value={postGraduateCourseCount ?? 0} helper="Post Graduate catalogue records" />
-        <StatCard label="Admitted / Onboarded" value={onboarded} helper="Recent visible records" />
+        <StatCard label="Admitted / Onboarded" value={onboarded} helper={isAdmin ? 'Recent visible records' : 'Your visible records'} />
       </div>
 
       <div className="table-card">
         <div className="student-register-heading">
           <div>
-            <h2>Student records</h2>
-            <p className="muted">Showing {(students ?? []).length} record(s), up to 200. Select a date range to narrow the register.</p>
+            <h2>{isAdmin ? 'Student records' : 'My registered students'}</h2>
+            <p className="muted">
+              Showing {(students ?? []).length} record(s), up to 200. {isAdmin ? 'Super User can view registrations from all staff.' : 'Only students registered using your logged-in staff account are shown.'}
+            </p>
           </div>
           <form className="student-date-filter" method="get">
             <label>From<input type="date" name="startDate" defaultValue={startDate} /></label>
@@ -142,7 +153,7 @@ export default async function DashboardPage({
                 );
               })}
               {!students?.length ? (
-                <tr><td colSpan={11}>No student records found for the selected dates.</td></tr>
+                <tr><td colSpan={11}>{isAdmin ? 'No student records found for the selected dates.' : 'No students registered by your staff account were found for the selected dates.'}</td></tr>
               ) : null}
             </tbody>
           </table>
