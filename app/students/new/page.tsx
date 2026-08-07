@@ -17,6 +17,16 @@ const TOTAL_COST_BUDGET_OPTIONS = [
   [10000000, 'INR 1 Crore']
 ] as const;
 
+const BOARD_OPTIONS = [
+  'CBSE',
+  'CISCE / ICSE / ISC',
+  'State Board',
+  'IB',
+  'Cambridge / IGCSE',
+  'NIOS',
+  'Other'
+] as const;
+
 export default async function NewStudentPage() {
   let subjectAreas = DEFAULT_SUBJECT_AREAS;
   try {
@@ -53,15 +63,20 @@ export default async function NewStudentPage() {
             </div>
             <div className="field">
               <label htmlFor="email">Email</label>
-              <input id="email" name="email" type="email" />
+              <input id="email" name="email" type="email" inputMode="email" autoComplete="email" />
+              <span className="help-text">Use a valid email domain, for example name@example.com.</span>
             </div>
             <div className="field">
               <label htmlFor="phone">Phone *</label>
-              <input id="phone" name="phone" type="tel" required />
+              <input id="phone" name="phone" type="tel" inputMode="numeric" minLength={10} maxLength={13} required />
+              <span className="help-text">Enter 10 to 13 digits. Spaces, brackets, hyphens and an optional country-code prefix are accepted.</span>
             </div>
             <div className="field">
               <label htmlFor="board">Board / curriculum</label>
-              <input id="board" name="board" placeholder="CBSE, ISC, IB, State Board" />
+              <select id="board" name="board" defaultValue="">
+                <option value="">Select board / curriculum</option>
+                {BOARD_OPTIONS.map((board) => <option key={board} value={board}>{board}</option>)}
+              </select>
             </div>
             <div className="field">
               <label htmlFor="yearX">Year for X Standard</label>
@@ -74,6 +89,7 @@ export default async function NewStudentPage() {
             <div className="field">
               <label htmlFor="yearXii">Year for XII</label>
               <input id="yearXii" name="yearXii" type="number" min="1950" max="2100" placeholder="e.g. 2026" />
+              <span className="help-text">XII passing year must be later than X passing year.</span>
             </div>
             <div className="field">
               <label htmlFor="marksXii">Marks in XII (%)</label>
