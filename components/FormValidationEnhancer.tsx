@@ -77,6 +77,7 @@ export default function FormValidationEnhancer() {
       if (!(target instanceof HTMLInputElement)) return;
 
       if (target.type === 'email') {
+        target.dataset.domainChecked = '';
         target.setCustomValidity(emailValidationMessage(target.value));
       }
 
@@ -98,13 +99,37 @@ export default function FormValidationEnhancer() {
       }
     }
 
+    async function handleBlur(event: Event) {
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement) || target.type !== 'email') return;
+      const localMessage = emailValidationMessage(target.value);
+      target.setCustomValidity(localMessage);
+      if (localMessage || !target.value.trim()) return;
+
+      try {
+        const response = await fetch(`/api/validate-email?email=${encodeURIComponent(target.value.trim())}`, { cache: 'no-store' });
+        const result = await response.json();
+        if (!result.valid) {
+          target.dataset.domainChecked = 'invalid';
+          target.setCustomValidity('This email domain does not appear to accept email. Check the domain spelling.');
+        } else {
+          target.dataset.domainChecked = 'valid';
+          target.setCustomValidity('');
+        }
+      } catch {
+        target.dataset.domainChecked = 'unavailable';
+        target.setCustomValidity('');
+      }
+    }
+
     function handleSubmit(event: Event) {
       const form = event.target;
       if (!(form instanceof HTMLFormElement)) return;
 
       const emailInputs = Array.from(form.querySelectorAll<HTMLInputElement>('input[type="email"]'));
       for (const email of emailInputs) {
-        email.setCustomValidity(emailValidationMessage(email.value));
+        const localMessage = emailValidationMessage(email.value);
+        email.setCustomValidity(localMessage || (email.dataset.domainChecked === 'invalid' ? 'This email domain does not appear to accept email. Check the domain spelling.' : ''));
         if (!email.checkValidity()) {
           event.preventDefault();
           email.reportValidity();
@@ -150,11 +175,11 @@ export default function FormValidationEnhancer() {
     }
 
     document.addEventListener('input', handleInput, true);
-    document.addEventListener('blur', handleInput, true);
+    document.addEventListener('blur', handleBlur, true);
     document.addEventListener('submit', handleSubmit, true);
     return () => {
       document.removeEventListener('input', handleInput, true);
-      document.removeEventListener('blur', handleInput, true);
+      document.removeEventListener('blur', handleBlur, true);
       document.removeEventListener('submit', handleSubmit, true);
     };
   }, []);
