@@ -83,23 +83,25 @@ export default function StudentIntakeWizard({
   }
 
   function sanitisePhone(event: React.FormEvent<HTMLFormElement>) {
-    const target = event.target as HTMLInputElement;
-    if (target?.name !== 'phone') return;
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement) || target.name !== 'phone') return;
     const cleaned = normalisePhoneNumber(target.value);
     if (target.value !== cleaned) target.value = cleaned;
     target.setCustomValidity(phoneValidationMessage(cleaned));
   }
 
   function validateOnBlur(event: React.FocusEvent<HTMLFormElement>) {
-    const target = event.target as HTMLInputElement;
-    if (target?.name === 'email') {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) return;
+
+    if (target.name === 'email') {
       target.setCustomValidity(emailValidationMessage(target.value));
     }
-    if (target?.name === 'phone') {
+    if (target.name === 'phone') {
       target.value = normalisePhoneNumber(target.value);
       target.setCustomValidity(phoneValidationMessage(target.value));
     }
-    if (target?.name === 'yearX' || target?.name === 'yearXii') {
+    if (target.name === 'yearX' || target.name === 'yearXii') {
       const form = event.currentTarget;
       const x = form.elements.namedItem('yearX') as HTMLInputElement | null;
       const xii = form.elements.namedItem('yearXii') as HTMLInputElement | null;
