@@ -23,6 +23,10 @@ export default function StudentIntakeWizard({
   const sectionRefs = useRef<Array<HTMLDivElement | null>>([]);
   const sections = Array.isArray(children) ? children : [children];
 
+  function selectedPhoneCountry(form: HTMLFormElement | null) {
+    return (form?.elements.namedItem('phoneCountry') as HTMLSelectElement | null)?.value || 'IN';
+  }
+
   function validateCurrentStep() {
     const container = sectionRefs.current[step];
     const fields = container?.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea');
@@ -40,7 +44,7 @@ export default function StudentIntakeWizard({
     const phone = container?.querySelector<HTMLInputElement>('input[name="phone"]');
     if (phone) {
       phone.value = normalisePhoneNumber(phone.value);
-      phone.setCustomValidity(phoneValidationMessage(phone.value));
+      phone.setCustomValidity(phoneValidationMessage(phone.value, selectedPhoneCountry(phone.form)));
       if (!phone.checkValidity()) {
         phone.reportValidity();
         phone.focus();
@@ -87,7 +91,7 @@ export default function StudentIntakeWizard({
     if (!(target instanceof HTMLInputElement) || target.name !== 'phone') return;
     const cleaned = normalisePhoneNumber(target.value);
     if (target.value !== cleaned) target.value = cleaned;
-    target.setCustomValidity(phoneValidationMessage(cleaned));
+    target.setCustomValidity(cleaned ? phoneValidationMessage(cleaned, selectedPhoneCountry(event.currentTarget)) : '');
   }
 
   function validateOnBlur(event: React.FocusEvent<HTMLFormElement>) {
@@ -99,7 +103,7 @@ export default function StudentIntakeWizard({
     }
     if (target.name === 'phone') {
       target.value = normalisePhoneNumber(target.value);
-      target.setCustomValidity(phoneValidationMessage(target.value));
+      target.setCustomValidity(phoneValidationMessage(target.value, selectedPhoneCountry(event.currentTarget)));
     }
     if (target.name === 'yearX' || target.name === 'yearXii') {
       const form = event.currentTarget;
