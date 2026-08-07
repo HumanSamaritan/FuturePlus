@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import FormDraftAutoSave from '@/components/FormDraftAutoSave';
+import FormValidationEnhancer from '@/components/FormValidationEnhancer';
 import Header from '@/components/Header';
 import './globals.css';
 
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Header />
         <main>{children}</main>
         <FormDraftAutoSave />
+        <FormValidationEnhancer />
       </body>
     </html>
   );
