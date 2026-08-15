@@ -1,0 +1,41 @@
+.wrapper { display: grid; gap: 1rem; }
+.heroGrid, .twoColumnGrid, .streamGrid { display: grid; gap: 1rem; }
+.heroGrid { grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); }
+.twoColumnGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.streamGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.snapshotCard, .alignmentCard, .panel, .staffPanel, .studentNote, .emptyState { border: 1px solid #dbe4f0; border-radius: 20px; background: #fff; padding: 1.15rem 1.2rem; box-shadow: 0 8px 24px rgba(15, 35, 70, .05); }
+.snapshotCard { background: linear-gradient(135deg, #ffffff 0%, #f5f8ff 100%); }
+.alignmentCard { border-left: 5px solid #7d8ca5; }
+.strong { border-left-color: #23915f; background: #f4fbf7; }
+.partial { border-left-color: #c98812; background: #fffaf0; }
+.different { border-left-color: #b44a5a; background: #fff6f7; }
+.insufficient { border-left-color: #7d8ca5; background: #f7f9fc; }
+.eyebrow { display: block; color: #3159a7; font-size: .76rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; margin-bottom: .6rem; }
+.chosenStreamRow, .alignmentHeader, .sectionHeading, .streamHeader { display: flex; gap: .8rem; align-items: center; justify-content: space-between; }
+.chosenStreamRow h3, .alignmentHeader h3, .sectionHeading h3, .streamCard h4 { margin: 0; color: #0d2348; }
+.label { display: block; color: #63718a; font-size: .78rem; margin-bottom: .15rem; }
+.programmeBadge, .scoreBadge, .guidanceBadge, .streamRank, .streamScore, .chip { display: inline-flex; align-items: center; border-radius: 999px; font-weight: 700; }
+.programmeBadge, .guidanceBadge { background: #edf3ff; color: #244f9b; padding: .35rem .65rem; font-size: .78rem; }
+.scoreBadge { background: #fff; border: 1px solid #d6dfec; color: #0d2348; padding: .35rem .65rem; }
+.snapshotList { display: grid; gap: .65rem; margin: 1rem 0 0; }
+.snapshotList div { display: grid; grid-template-columns: 105px 1fr; gap: .75rem; }
+.snapshotList dt { color: #65728a; font-weight: 700; }
+.snapshotList dd { margin: 0; color: #172b4d; }
+.alignmentCard p, .panel p, .staffPanel p, .studentNote p, .streamCard p, .emptyState p { color: #43516a; line-height: 1.55; }
+.alignmentCard small { color: #6c7890; }
+.chipList { display: flex; flex-wrap: wrap; gap: .55rem; }
+.chip { padding: .4rem .7rem; background: #f3f6fb; color: #27446f; font-size: .85rem; border: 1px solid #e0e7f0; }
+.streamCard { border: 1px solid #e0e7f0; border-radius: 16px; padding: 1rem; background: #fbfcff; }
+.streamRank { background: #173a74; color: #fff; width: 30px; height: 30px; justify-content: center; }
+.streamScore { color: #244f9b; font-size: .85rem; }
+.progressTrack { height: 7px; border-radius: 999px; background: #e9eef7; overflow: hidden; margin: .7rem 0; }
+.progressFill { display: block; height: 100%; background: #3159a7; border-radius: inherit; }
+.cleanList, .numberedList { margin: .25rem 0 0; padding-left: 1.2rem; color: #35445e; line-height: 1.55; }
+.cleanList li, .numberedList li { margin-bottom: .45rem; }
+.staffPanel { background: #fff9ec; border-color: #f0d99b; }
+.studentNote { background: #f3f8ff; border-color: #cddcf2; }
+.studentNote strong { color: #173a74; }
+.muted { color: #6c7890; }
+.emptyState { background: #f8fafc; }
+@media (max-width: 980px) { .heroGrid, .twoColumnGrid, .streamGrid { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .snapshotList div { grid-template-columns: 1fr; gap: .1rem; } .chosenStreamRow, .sectionHeading { align-items: flex-start; flex-direction: column; } }

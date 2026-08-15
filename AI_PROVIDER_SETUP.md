@@ -1,161 +1,121 @@
 # Future Plus AI provider setup
 
-Future Plus can use Gemini, Groq, OpenRouter, and DeepSeek together. Every
-configured provider is consulted in parallel, successful analyses are
-consolidated into one AI Insights report, and an individual provider failure
-does not prevent the other providers from completing. Keys stay on the server
-and are never sent to a user's browser.
+Future Plus supports Groq, Gemini, OpenRouter and DeepSeek. Provider keys remain server-side. The verified college-fit engine remains authoritative for ranking; AI generates staff-facing explanations and does not overwrite deterministic fit scores.
 
-## Multi-model Vercel configuration
+## Recommended Groq configuration
 
-Add the providers you want under **Vercel > Future Plus > Settings >
-Environment Variables**:
+Use these variables for new Preview and Production deployments:
 
-| Name | Example value |
-| --- | --- |
-| `AI_PROVIDERS` | `groq,gemini,openrouter,deepseek` |
-| `GROQ_API_KEY` | the Groq key |
-| `GROQ_MODEL` | `llama-3.1-8b-instant` |
-| `GEMINI_API_KEY` | the Gemini key |
-| `GEMINI_MODEL` | `gemini-2.5-flash` |
-| `OPENROUTER_API_KEY` | the OpenRouter key |
-| `OPENROUTER_MODEL` | `openrouter/free` |
-| `DEEPSEEK_API_KEY` | the DeepSeek key |
-| `DEEPSEEK_MODEL` | `deepseek-v4-flash` |
+| Variable | Recommended value | Purpose |
+| --- | --- | --- |
+| `GROQ_API_KEY` | your Groq key | Server-side authentication |
+| `GROQ_PRIMARY_MODEL` | `openai/gpt-oss-120b` | Counselling analysis and final synthesis |
+| `GROQ_FAST_MODEL` | `openai/gpt-oss-20b` | Lightweight evidence-to-JSON formatting |
+| `GROQ_SEARCH_MODEL` | `groq/compound` | Live university/college discovery |
 
-The order in `AI_PROVIDERS` controls which successful provider consolidates the
-independent analyses. Only providers with an API key are called. To temporarily
-disable one provider, remove its key or remove its name from `AI_PROVIDERS`,
-then redeploy.
+`GROQ_MODEL` remains supported temporarily for backward compatibility, but new deployments should use `GROQ_PRIMARY_MODEL` and `GROQ_FAST_MODEL`.
 
-After saving, open **Deployments**, select the latest deployment and choose
-**Redeploy**. Then open a student and select **Regenerate AI Insights**.
+Do not use legacy defaults such as `llama-3.1-8b-instant` or `llama-3.3-70b-versatile` for new Free/Developer-tier deployments. Groq scheduled those models to shut down for those tiers on 16 August 2026.
 
-## Recommended starting setup: Groq with Llama
+## Preview-first migration
 
-Groq is the simplest free-plan option for this application. Its free plan
-currently includes Llama models with published request and token limits.
+For the migration branch, scope all new variables to **Preview only** first.
 
-1. Go to https://console.groq.com and sign in.
-2. Open **API Keys**: https://console.groq.com/keys.
-3. Select **Create API Key**, name it `future-plus-vercel`, and copy it.
-4. In Vercel, open the Future Plus project.
-5. Open **Settings > Environment Variables**.
-6. Add these variables:
+Recommended Preview configuration:
 
-   | Name | Value |
-   | --- | --- |
-   | `GROQ_API_KEY` | the copied Groq key |
-   | `GROQ_MODEL` | `llama-3.1-8b-instant` |
+```text
+AI_PROVIDERS=groq
+GROQ_API_KEY=<preview Groq key>
+GROQ_PRIMARY_MODEL=openai/gpt-oss-120b
+GROQ_FAST_MODEL=openai/gpt-oss-20b
+GROQ_SEARCH_MODEL=groq/compound
+WEB_DISCOVERY_PROVIDERS=groq
+AI_MAX_OUTPUT_TOKENS=3200
+```
 
-7. Select **Production**, **Preview**, and **Development** if all environments
-   should use the provider. At minimum, select **Production**.
-8. Save the variables.
-9. Open **Deployments**, select the latest deployment, and choose **Redeploy**.
-   Environment changes do not alter an already-built deployment.
-10. Open a student in Future Plus and select **Regenerate AI Insights**.
+Keep the existing Supabase, authentication and staff-access variables available to Preview as well. Do not change Production variables until the Preview tests pass.
 
-For a more capable but more restricted free-plan model, change `AI_MODEL` to
-`llama-3.3-70b-versatile`. Groq's current exact limits should always be checked
-on the account's Limits page before production use.
+Using only `groq` in `AI_PROVIDERS` during the migration test isolates the new Groq path. After validation, additional providers can be re-enabled if the multi-model strategy is intentionally retained.
 
-## Alternative A: Google Gemini free tier
+## Multi-provider configuration
 
-1. Open Google AI Studio: https://aistudio.google.com/apikey.
-2. Sign in, choose **Get API key**, select or create a Google Cloud project, and
-   copy the key.
-3. Add or replace these Vercel variables:
+Future Plus can still consult multiple configured providers in parallel:
 
-   | Name | Value |
-   | --- | --- |
-   | `GEMINI_API_KEY` | the copied Gemini key |
-   | `GEMINI_MODEL` | `gemini-2.5-flash` |
+```text
+AI_PROVIDERS=groq,gemini,openrouter,deepseek
+```
 
-4. Save and redeploy the Vercel project.
+Only providers with both an enabled name and an API key are called. The first successful provider in the configured order is used for synthesis when several providers succeed.
 
-Google provides free-tier access to selected Gemini models subject to region,
-model, and rate limits. Free-tier prompts and responses may be used by Google to
-improve its products, which should be considered before sending real student
-data.
+Supported examples:
 
-Existing deployments using `GEMINI_API_KEY` and `GEMINI_MODEL` continue to work.
+```text
+GEMINI_API_KEY=<key>
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_SEARCH_MODEL=gemini-2.5-flash
 
-## Alternative B: OpenRouter free models
+OPENROUTER_API_KEY=<key>
+OPENROUTER_MODEL=openrouter/free
+OPENROUTER_WEB_SEARCH=false
 
-OpenRouter is useful for trying a rotating group of free models, including
-open-weight families. Availability can vary, so this is better for testing or
-as a backup than for a predictable production service.
+DEEPSEEK_API_KEY=<key>
+DEEPSEEK_MODEL=deepseek-v4-flash
+```
 
-1. Go to https://openrouter.ai/settings/keys and create an API key.
-2. Add or replace these Vercel variables:
+## Backward compatibility
 
-   | Name | Value |
-   | --- | --- |
-   | `OPENROUTER_API_KEY` | the copied OpenRouter key |
-   | `OPENROUTER_MODEL` | `openrouter/free` |
-   | `NEXT_PUBLIC_SITE_URL` | the production Future Plus URL |
+The application still recognizes the legacy single-provider pattern:
 
-3. Save and redeploy.
+```text
+AI_PROVIDER=groq
+AI_API_KEY=<key>
+AI_MODEL=openai/gpt-oss-120b
+```
 
-The free router chooses from currently available free models. For a specific
-model, use its exact OpenRouter ID ending in `:free`. Accounts without purchased
-credits currently receive a lower daily free-model request limit.
+It also temporarily recognizes:
 
-## Alternative C: DeepSeek
+```text
+GROQ_MODEL=openai/gpt-oss-120b
+```
 
-DeepSeek's official API is inexpensive but should not be treated as a permanent
-free service. It bills tokens from topped-up or granted balance.
+These compatibility paths are intended to prevent migration outages. Prefer the new provider-specific variables for all newly configured environments.
 
-1. Create an account at https://platform.deepseek.com.
-2. Create an API key in the platform's API keys section and copy it.
-3. Add or replace these Vercel variables:
+## Preview validation checklist
 
-   | Name | Value |
-   | --- | --- |
-   | `DEEPSEEK_API_KEY` | the copied DeepSeek key |
-   | `DEEPSEEK_MODEL` | `deepseek-v4-flash` |
+After the Preview deployment is READY:
 
-4. Ensure the account has granted or topped-up balance, save, and redeploy.
+1. Sign in using a permitted Future Plus staff account.
+2. Open an existing test student or create a non-sensitive test profile.
+3. Run or regenerate **AI Insights**.
+4. Confirm the provider-status line reports `groq (openai/gpt-oss-120b): used`.
+5. Confirm all seven report sections are present and that no college, fee, placement figure, scholarship or admission rule is invented.
+6. Confirm deterministic college-fit scores and rankings are unchanged by the AI output.
+7. Run **web college discovery** for at least two different student profiles.
+8. Confirm the discovery provider reports Groq usage and returns current HTTPS source URLs.
+9. Confirm lightweight formatting uses `openai/gpt-oss-20b` when Compound search evidence needs conversion.
+10. Check Vercel runtime logs for provider errors, timeouts or malformed JSON.
+11. Test one failure case by temporarily removing the Preview Groq key or using a controlled invalid Preview value, then restore it. The deterministic verified-fit table must remain available when AI is unavailable.
+12. Do not copy real student data into support messages or screenshots.
 
-Do not use the older `deepseek-chat` or `deepseek-reasoner` names; DeepSeek's
-documentation states that they were deprecated in July 2026.
+## Production promotion gate
 
-## Switching or limiting providers
+Do not change Production until all Preview tests pass.
 
-Change `AI_PROVIDERS` or the provider-specific keys and models. No code change
-is required after this version is live, although Vercel must redeploy after an
-environment-variable change.
+For Production, use:
 
-| Provider | Provider key variable | Suggested model variable | Free status |
-| --- | --- | --- | --- |
-| Groq/Llama | `GROQ_API_KEY` | `GROQ_MODEL=llama-3.1-8b-instant` | Free plan with limits |
-| Gemini | `GEMINI_API_KEY` | `GEMINI_MODEL=gemini-2.5-flash` | Free tier in supported regions |
-| OpenRouter | `OPENROUTER_API_KEY` | `OPENROUTER_MODEL=openrouter/free` | Free models with low limits |
-| DeepSeek | `DEEPSEEK_API_KEY` | `DEEPSEEK_MODEL=deepseek-v4-flash` | Paid usage or granted balance |
+```text
+GROQ_PRIMARY_MODEL=openai/gpt-oss-120b
+GROQ_FAST_MODEL=openai/gpt-oss-20b
+GROQ_SEARCH_MODEL=groq/compound
+```
 
-## Security and production checklist
+During the first Production release, `GROQ_MODEL=openai/gpt-oss-120b` may be retained temporarily if the existing environment already uses that key name. Remove the legacy variable only after the new deployment has been verified.
 
-- Never add `NEXT_PUBLIC_` to any provider API key. Variables with that prefix
-  can be exposed to browser code.
-- Never paste a real key into `.env.example`, GitHub, screenshots, or support
-  messages.
-- Create separate keys for local development and Vercel production.
-- Rotate a key immediately if it is exposed.
-- Keep the verified college-fit calculation as the source of ranking. The AI
-  writes a staff-facing explanation; it does not calculate or overwrite scores.
-- Staff must verify admissions, fees, eligibility, placements, and scholarship
-  facts before advising a student.
-- Free tiers are rate-limited and can change. For production, add monitoring and
-  plan for a paid tier or a secondary provider.
+## Security requirements
 
-## Local test
-
-1. Copy `.env.example` to `.env.local`.
-2. Add one or more providers' real keys to `.env.local`.
-3. Run `npm run dev`.
-4. Create or open a test student and regenerate AI Insights.
-5. Confirm `.env.local` is ignored by Git before committing.
-
-The report includes a provider-status line showing which configured models were
-used or unavailable. If all providers fail, Future Plus displays the errors and
-continues to show the deterministic verified college-fit table.
+- Never prefix an AI provider secret with `NEXT_PUBLIC_`.
+- Never commit real API keys to GitHub or `.env.example`.
+- Keep Preview and Production secrets separately scoped where practical.
+- Rotate any credential that is exposed in a screenshot, commit or support channel.
+- Staff must independently verify eligibility, fees, placements, scholarships and admissions deadlines using current institutional sources before advising a student.
+- Treat live-web results as discovery candidates requiring staff verification, not as authoritative admissions data.
