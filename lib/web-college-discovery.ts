@@ -68,7 +68,31 @@ function messageText(content: unknown) {
   }).join('').trim();
 }
 
+function extractDelimitedRows(text: string): unknown[] {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith('RESULT|||'))
+    .map((line) => {
+      const parts = line.split('|||').map((part) => part.trim());
+      if (parts.length < 8) return null;
+      return {
+        college_name: parts[1],
+        course_name: parts[2],
+        city: parts[3] || null,
+        state: parts[4] || null,
+        fit_level: parts[5] || 'Exploratory',
+        subject_area: parts[6] || null,
+        source_url: parts.slice(7).join('|||').trim()
+      };
+    })
+    .filter(Boolean) as unknown[];
+}
+
 function extractRows(text: string): unknown[] {
+  const delimitedRows = extractDelimitedRows(text);
+  if (delimitedRows.length) return delimitedRows;
+
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1];
   for (const source of [fenced, text].filter(Boolean) as string[]) {
     for (const candidate of [
@@ -107,8 +131,9 @@ function fitScore(level: WebCollegeInsight['fit_level']) {
 
 function safeSourceUrl(value: unknown) {
   const raw = String(value || '').trim();
+  const extracted = raw.match(/https:\/\/[^\s<>"'\])}]+/i)?.[0]?.replace(/[.,;:]+$/, '') || raw;
   try {
-    const url = new URL(raw);
+    const url = new URL(extracted);
     if (url.protocol !== 'https:' || BLOCKED_SOURCE_HOSTS.has(url.hostname.toLowerCase())) return null;
     return url.toString();
   } catch {
@@ -120,18 +145,22 @@ function normalizeRow(value: unknown, provider: string): WebCollegeInsight | nul
   if (!value || typeof value !== 'object') return null;
   const row = value as Record<string, unknown>;
   const collegeName = String(row.college_name || row.university_name || '').trim();
+  const courseName = String(row.course_name || '').trim();
+  const subjectArea = String(row.subject_area || '').trim();
   const sourceUrl = safeSourceUrl(row.source_url);
   if (!collegeName || !sourceUrl) return null;
   const level = fitLevel(row.fit_level);
   return {
     college_name: collegeName,
+    course_name: courseName || undefined,
+    subject_area: subjectArea || undefined,
     program_level: 'undergraduate',
     city: row.city ? String(row.city).trim() : null,
     state: row.state ? String(row.state).trim() : null,
     country: 'India',
     fit_level: level,
     fit_score: fitScore(level),
-    fit_feedback: 'Potential profile match. Verify current programme availability, campus, eligibility, fees, approvals/accreditation and other admissions details on the linked official source before advising the student.',
+    fit_feedback: 'Potential chosen-stream match discovered from the web. Staff must verify current programme availability, campus, eligibility, fees, approvals/accreditation and admissions details on the linked official source before advising the student.',
     source_url: sourceUrl,
     web_verification_status: 'staff_verification_required',
     discovered_by: [provider]
@@ -139,64 +168,60 @@ function normalizeRow(value: unknown, provider: string): WebCollegeInsight | nul
 }
 
 function buildPrompt(student: StudentInput) {
+  const selectedStreams = student.subjectsInterest.slice(0, 4);
   const profile = {
     programme: student.programLevel || 'undergraduate',
-    subjects: student.subjectsInterest.slice(0, 6),
+    chosenStreams: selectedStreams,
     preferredLocations: student.preferredLocations.slice(0, 4),
     classXiiPercentage: student.marksXii,
     undergraduateDegree: student.undergraduateDegree,
     undergraduateSpecialisation: student.undergraduateSpecialisation,
     undergraduatePercentage: student.undergraduateFinalPercentage,
     budgetMaximumINR: student.budgetMax,
-    hostelRequired: student.hostelRequired,
-    careerGoals: student.careerGoals?.slice(0, 160),
-    constraints: student.constraints?.slice(0, 160)
+    hostelRequired: student.hostelRequired
   };
 
-  return `Use one web search to find up to 5 Indian universities or colleges that could fit this student and are not already in the supplied Future Plus database.
-Use only official institution websites or authoritative government/regulator sources. Never invent a campus or URL. If an official HTTPS source cannot be found, omit that candidate.
-Return ONLY JSON in this shape:
-{"results":[{"college_name":"", "city":null, "state":null, "fit_level":"Strong|Good|Moderate|Exploratory", "source_url":"https://..."}]}
-Do not include fees, accreditation, approvals, eligibility, hostel, placements or scholarships.
-Student: ${JSON.stringify(profile)}`;
+  return `Search current official Indian university/college websites for up to 6 institutions offering a course that DIRECTLY matches the student's chosen stream.
+
+The chosen stream is a HARD FILTER. Do not return unrelated courses because of rankings, employability, popularity or partnership potential.
+- If chosen stream is Medicine, return direct medicine/MBBS/medical-degree pathways only. Do not return Computer Science, Business, Law or general Engineering.
+- Nursing and B-Pharma are separate streams and must not be silently substituted for Medicine.
+- If direct chosen-stream results cannot be verified from official sources, return fewer rows rather than unrelated alternatives.
+
+Use only official institution websites or authoritative government/regulator sources. Do not use Shiksha, Collegedunia, Careers360, GetMyUni or other aggregators. Never invent a campus, programme or URL.
+
+Return ONLY one line per verified candidate in this exact format, with no prose before or after:
+RESULT|||College name|||Exact matching course/programme|||City|||State|||Strong|Good|Moderate|||Subject area|||https://official-source-url
+
+Use the official page that best supports the existence of the programme. Do not include fee, eligibility, accreditation, hostel, placement or scholarship claims in the line; Future Plus staff will verify those separately.
+Student profile: ${JSON.stringify(profile)}`;
 }
 
 async function searchGroq(prompt: string) {
   const apiKey = providerKey('groq');
   if (!apiKey) return null;
 
-  // College discovery is intentionally a single-search, low-latency workload.
-  // Keep it isolated from the heavier general GROQ_SEARCH_MODEL setting.
-  const model = clean(process.env.GROQ_DISCOVERY_MODEL) || 'groq/compound-mini';
+  // Keep discovery on the fast GPT-OSS model so it does not compete with the
+  // heavier GPT-OSS-120B counselling workload for the same per-model TPM pool.
+  const model = clean(process.env.GROQ_FAST_MODEL) || 'openai/gpt-oss-20b';
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-      'Groq-Model-Version': 'latest'
+      Authorization: `Bearer ${apiKey}`
     },
     body: JSON.stringify({
       model,
       messages: [{ role: 'user', content: prompt }],
-      response_format: { type: 'json_object' },
-      compound_custom: {
-        tools: {
-          enabled_tools: ['web_search']
-        }
-      },
-      search_settings: {
-        country: 'india',
-        exclude_domains: [
-          'shiksha.com',
-          'collegedunia.com',
-          'careers360.com',
-          'getmyuni.com',
-          'ouatuniversity.edu.in'
-        ]
-      },
-      max_completion_tokens: 700
+      tools: [{ type: 'browser_search' }],
+      tool_choice: 'required',
+      reasoning_effort: 'low',
+      include_reasoning: false,
+      temperature: 0.1,
+      max_completion_tokens: 900,
+      stream: false
     }),
-    signal: AbortSignal.timeout(18000)
+    signal: AbortSignal.timeout(22000)
   });
 
   const responseText = await response.text();
@@ -209,7 +234,7 @@ async function searchGroq(prompt: string) {
   };
   const content = messageText(data.choices?.[0]?.message?.content);
   if (extractRows(content).length) return content;
-  throw new Error('Live search returned no usable structured shortlist.');
+  throw new Error('Live search returned no usable chosen-stream shortlist.');
 }
 
 async function searchGemini(prompt: string) {
@@ -306,7 +331,7 @@ export async function discoverWebCollegeInsights(
       const insight = normalizeRow(row, response.provider);
       if (!insight || existingNames.has(insight.college_name.toLowerCase())) continue;
       insight.program_level = student.programLevel || 'undergraduate';
-      const key = `${insight.college_name}|${insight.city || ''}|${insight.state || ''}`.toLowerCase();
+      const key = `${insight.college_name}|${insight.course_name || ''}|${insight.city || ''}`.toLowerCase();
       const existing = merged.get(key);
       if (existing) {
         existing.discovered_by = [...new Set([...existing.discovered_by, response.provider])];
@@ -326,10 +351,10 @@ export async function discoverWebCollegeInsights(
   const genericStatus: ProviderStatus = !anyConfigured
     ? { provider: 'live-search', status: 'not_configured', detail: 'Live discovery is temporarily unavailable.' }
     : insights.length
-      ? { provider: 'live-search', status: 'used', detail: `${insights.length} candidate(s) returned for staff verification.` }
+      ? { provider: 'live-search', status: 'used', detail: `${insights.length} chosen-stream candidate(s) returned for staff verification.` }
       : anyFailure
         ? { provider: 'live-search', status: 'failed', detail: 'Live discovery is temporarily unavailable. Please try again.' }
-        : { provider: 'live-search', status: 'no_parseable_results', detail: parsedCount ? 'No candidates passed source validation.' : 'No suitable candidates were returned.' };
+        : { provider: 'live-search', status: 'no_parseable_results', detail: parsedCount ? 'No candidates passed source validation.' : 'No suitable chosen-stream candidates were returned.' };
 
   return {
     insights,
