@@ -2,17 +2,21 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
 import { isAllowedUserEmail } from '@/lib/env';
-import { headers } from 'next/headers';
 import { unstable_noStore as noStore } from 'next/cache';
 
 export default async function Header() {
   noStore();
-  const pathname = (await headers()).get('x-future-plus-pathname') || '/';
   const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
-  const isStaff = pathname !== '/' && Boolean(user && isAllowedUserEmail(user.email));
+
+  // Workspace shell selection is session-driven, not pathname-driven.
+  // This prevents an authenticated staff page from intermittently rendering
+  // inside the public-site header when route headers are missing/stale during
+  // navigation, refresh, OAuth return, or cached RSC requests.
+  const isStaff = Boolean(user && isAllowedUserEmail(user.email));
+
   let staffName = '';
   let staffEmail = '';
   let staffRole = 'Staff';
