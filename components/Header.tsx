@@ -5,15 +5,20 @@ import { createClient } from '@/lib/supabase/server';
 import { isAllowedUserEmail } from '@/lib/env';
 import { unstable_noStore as noStore } from 'next/cache';
 
+const workspacePrefixes = ['/dashboard', '/students', '/colleges', '/admin'];
+
 export default async function Header() {
   noStore();
   const pathname = (await headers()).get('x-future-plus-pathname') || '/';
-  const isNeutralLogin = pathname.toLowerCase() === '/staff-login';
+  const normalizedPath = pathname.toLowerCase();
+  const isNeutralLogin = normalizedPath === '/staff-login';
+  const isWorkspaceRoute = workspacePrefixes.some((prefix) => normalizedPath.startsWith(prefix));
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isStaff = Boolean(user && isAllowedUserEmail(user.email));
+  const showWorkspace = isStaff && isWorkspaceRoute;
 
-  if (isNeutralLogin && !isStaff) {
+  if (isNeutralLogin) {
     return (
       <header className="site-header auth-neutral-header">
         <div className="neutral-brand-mark">AW</div>
@@ -25,7 +30,7 @@ export default async function Header() {
   let staffName = '';
   let staffEmail = '';
   let staffRole = 'Staff';
-  if (isStaff && user) {
+  if (showWorkspace && user) {
     const { data: profile } = await supabase.from('profiles').select('full_name,email,role').eq('id', user.id).maybeSingle();
     staffEmail = profile?.email || user.email || '';
     staffRole = profile?.role === 'admin' ? 'Administrator' : 'Staff';
@@ -33,8 +38,8 @@ export default async function Header() {
   }
 
   return (
-    <header className={`site-header ${isStaff ? 'workspace-nav' : 'public-nav'}`}>
-      {isStaff ? (
+    <header className={`site-header ${showWorkspace ? 'workspace-nav' : 'public-nav'}`}>
+      {showWorkspace ? (
         <Link href="/dashboard" className="brand workspace-neutral-brand">
           <span className="neutral-brand-mark">CW</span>
           <span><strong>Counselling Workspace</strong><small>Secure staff environment</small></span>
@@ -46,7 +51,7 @@ export default async function Header() {
         </Link>
       )}
 
-      {isStaff ? (
+      {showWorkspace ? (
         <div className="staff-identity staff-identity-top" aria-label="Signed-in staff member">
           <span className="staff-avatar">{staffName.slice(0, 1).toUpperCase()}</span>
           <span><strong title={staffName}>{staffName}</strong><small>{staffRole} · {staffEmail}</small></span>
@@ -54,7 +59,7 @@ export default async function Header() {
       ) : null}
 
       <nav>
-        {isStaff ? (
+        {showWorkspace ? (
           <>
             <Link href="/dashboard"><span className="workspace-nav-icon" aria-hidden="true">✨</span><span>Dashboard</span></Link>
             <Link href="/students/new"><span className="workspace-nav-icon" aria-hidden="true">🎓</span><span>Under Graduate intake</span></Link>
