@@ -1,41 +1,18 @@
 'use server';
 
-import { createHash } from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { generateCounsellingSummary } from '@/lib/ai';
 import { getCourseCatalog } from '@/lib/data';
 import { isAllowedUserEmail } from '@/lib/env';
+import { assessmentMetadata, attachAssessmentMetadata, studentAiFingerprint, withDocumentEvidence } from '@/lib/profile-evidence';
 import { generateRecommendations } from '@/lib/recommendation';
 import { storedStudentToInput } from '@/lib/student-input';
 import { createClient } from '@/lib/supabase/server';
 
-function fingerprint(input: ReturnType<typeof storedStudentToInput>, linkedinProfileText?: string | null) {
-  const relevant = {
-    programLevel: input.programLevel,
-    yearX: input.yearX, marksX: input.marksX, yearXii: input.yearXii, marksXii: input.marksXii, board: input.board,
-    subjectsInterest: input.subjectsInterest, preferredLocations: input.preferredLocations,
-    passion: input.passion, purpose: input.purpose, strengths: input.strengths, constraints: input.constraints,
-    careerGoals: input.careerGoals, linkedinUrl: input.linkedinUrl, linkedinProfileText: linkedinProfileText || null,
-    facebookUrl: input.facebookUrl, instagramUrl: input.instagramUrl, xUrl: input.xUrl, portfolioUrl: input.portfolioUrl,
-    accolades: input.accolades, extracurricularActivities: input.extracurricularActivities, rewards: input.rewards,
-    specialSkills: input.specialSkills, certifications: input.certifications, languages: input.languages,
-    workExperience: input.workExperience, undergraduateDegree: input.undergraduateDegree,
-    undergraduateSpecialisation: input.undergraduateSpecialisation, undergraduateFinalPercentage: input.undergraduateFinalPercentage,
-    currentJobTitle: input.currentJobTitle, workExperienceMonths: input.workExperienceMonths
-  };
-  return createHash('sha256').update(JSON.stringify(relevant)).digest('hex');
-}
-
-function existingFingerprint(raw: string | null | undefined) {
-  if (!raw) return null;
-  try { return JSON.parse(raw)?.profileFingerprint || null; } catch { return null; }
-}
-
 export async function regenerateCounsellingSummaryAction(formData: FormData) {
   const supabase = await createClient();
-  const studentId = String(formData.get('studentId') || '');
-  const force = String(formData.get('force') || '') === 'true';
+  const studentId = String(formData.get('studentId') || '').trim();
   if (!studentId) throw new Error('Student ID is required.');
 
   const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -45,41 +22,29 @@ export async function regenerateCounsellingSummaryAction(formData: FormData) {
   if (studentError) throw new Error(studentError.message);
 
   const studentInput = storedStudentToInput(student);
-  const linkedinProfileText = String(student.linkedin_profile_text || '').trim();
-  const currentFingerprint = fingerprint(studentInput, linkedinProfileText);
-  const storedFingerprint = existingFingerprint(student.ai_summary);
-
-  const assessmentCurrent = Boolean(student.ai_summary) && student.ai_profile_dirty === false;
-  if (!force && (assessmentCurrent || (storedFingerprint && storedFingerprint === currentFingerprint))) {
+  const currentFingerprint = studentAiFingerprint(studentInput);
+  const stored = assessmentMetadata(student.ai_summary);
+  if (stored.status === 'ready' && stored.fingerprint === currentFingerprint) {
     redirect(`/students/${studentId}`);
   }
-
-  const aiStudentInput = linkedinProfileText
-    ? {
-        ...studentInput,
-        workExperience: [
-          studentInput.workExperience,
-          `LinkedIn profile text supplied by staff for AI review:\n${linkedinProfileText}`
-        ].filter(Boolean).join('\n\n')
-      }
-    : studentInput;
 
   const allCourses = await getCourseCatalog();
   const courses = allCourses.filter((course) => (course.program_level || 'undergraduate') === studentInput.programLevel);
   const recommendations = generateRecommendations(studentInput, courses);
-  const generated = await generateCounsellingSummary(aiStudentInput, courses, recommendations);
-  let summary = generated;
-  try {
-    const parsed = JSON.parse(generated);
-    parsed.profileFingerprint = currentFingerprint;
-    parsed.generatedAt = new Date().toISOString();
-    if (linkedinProfileText) parsed.linkedinProfileTextReviewed = true;
-    summary = JSON.stringify(parsed);
-  } catch { /* preserve provider fallback text if ever returned */ }
+  const generated = await generateCounsellingSummary(withDocumentEvidence(studentInput), courses, recommendations);
+  const summary = attachAssessmentMetadata(generated, currentFingerprint);
 
   if (recommendations.length) {
     const { error } = await supabase.from('recommendations').upsert(
-      recommendations.map((rec) => ({ student_id: studentId, course_id: rec.courseId, fit_score: rec.fitScore, rank: rec.rank, score_breakdown: rec.scoreBreakdown, reason: rec.reason, staff_hidden_reason: rec.staffHiddenReason })),
+      recommendations.map((rec) => ({
+        student_id: studentId,
+        course_id: rec.courseId,
+        fit_score: rec.fitScore,
+        rank: rec.rank,
+        score_breakdown: rec.scoreBreakdown,
+        reason: rec.reason,
+        staff_hidden_reason: rec.staffHiddenReason
+      })),
       { onConflict: 'student_id,rank' }
     );
     if (error) throw new Error(error.message);

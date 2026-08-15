@@ -68,17 +68,21 @@ export type StudentInput = PostgraduateStudentFields & {
   supportRequired: string[];
   notes?: string;
   linkedinUrl?: string;
+  linkedinProfileText?: string;
+  linkedinProfilePdfText?: string;
   facebookUrl?: string;
   instagramUrl?: string;
   xUrl?: string;
+  portfolioUrl?: string;
   accolades?: string;
   extracurricularActivities?: string;
   rewards?: string;
   specialSkills?: string;
   certifications?: string;
-  portfolioUrl?: string;
   languages?: string;
   workExperience?: string;
+  resumeText?: string;
+  resumeFileText?: string;
   careerGoals?: string;
 };
 

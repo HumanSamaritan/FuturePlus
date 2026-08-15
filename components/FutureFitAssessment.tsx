@@ -23,9 +23,7 @@ function normalizeStream(value: string) { return value.trim().toLowerCase().repl
 
 export default function FutureFitAssessmentView({ rawSummary }: Props) {
   const assessment = parseAssessment(rawSummary);
-  if (!assessment) {
-    return <div className={styles.emptyState}><h3>Future-Fit assessment not yet available</h3><p>Generate the structured assessment after the profile is complete. Stored results are reused until AI-relevant profile data changes.</p></div>;
-  }
+  if (!assessment) return <div className={styles.emptyState}><h3>Future-Fit assessment not yet available</h3><p>Click AI Assessment after the student profile is complete. Stored results are reused automatically until assessment evidence changes.</p></div>;
 
   const snapshot = assessment.studentSnapshot;
   const alignment = assessment.chosenStreamAlignment;
@@ -34,9 +32,6 @@ export default function FutureFitAssessmentView({ rawSummary }: Props) {
     ...(alignment.score != null ? [{ stream: snapshot.chosenStream, alignmentScore: alignment.score, reasoning: alignment.reasoning, chosen: true }] : []),
     ...assessment.predictedStreams.filter((stream) => normalizeStream(stream.stream) !== chosenKey).map((stream) => ({ ...stream, chosen: false }))
   ].sort((a, b) => b.alignmentScore - a.alignmentScore).slice(0, 4);
-
-  const hasLinkedInReference = assessment.digitalProfileEvidence.some((item) => item.toLowerCase().includes('linkedin'));
-  const otherDigitalEvidence = assessment.digitalProfileEvidence.filter((item) => !item.toLowerCase().includes('linkedin'));
 
   return (
     <div className={styles.wrapper}>
@@ -69,14 +64,12 @@ export default function FutureFitAssessmentView({ rawSummary }: Props) {
       <div className={styles.twoColumnGrid}>
         <section className={styles.panel}>
           <span className={styles.eyebrow}>Digital-profile evidence</span>
-          {hasLinkedInReference ? <div className={styles.linkedinReview}><p><strong>LinkedIn URL recorded.</strong> The URL itself is not scraped. Staff can review the profile from the LinkedIn link in the Student Profile section, or paste profile text into the dedicated LinkedIn review field so it becomes part of the next Future-Fit assessment.</p></div> : null}
-          {otherDigitalEvidence.length ? <ul className={styles.cleanList}>{otherDigitalEvidence.map((item) => <li key={item}>{item}</li>)}</ul> : !hasLinkedInReference ? <p className={styles.muted}>No external profile evidence was independently retrieved.</p> : null}
+          {assessment.digitalProfileEvidence.length ? <ul className={styles.cleanList}>{assessment.digitalProfileEvidence.map((item) => <li key={item}>{item}</li>)}</ul> : <p className={styles.muted}>No additional digital-profile evidence was available for this assessment.</p>}
+          <p className={styles.muted}>Profile URLs alone are references only. Future-Fit uses profile text or documents supplied in the student record; it does not claim to scrape private or restricted profile content.</p>
         </section>
         <section className={styles.panel}><span className={styles.eyebrow}>What to explore next</span>{assessment.exploreNext.length ? <ol className={styles.numberedList}>{assessment.exploreNext.map((item) => <li key={item}>{item}</li>)}</ol> : <p className={styles.muted}>Discuss practical exploration steps with the counsellor.</p>}</section>
       </div>
-
       <section className={styles.staffPanel}><span className={styles.eyebrow}>Staff-only assessment</span><p>{assessment.staffAssessment}</p></section>
-      <section className={styles.studentNote}><strong>Note for the student</strong><p>{assessment.studentNote}</p></section>
     </div>
   );
 }
