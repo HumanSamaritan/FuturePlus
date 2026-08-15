@@ -204,7 +204,7 @@ export async function generateCounsellingSummary(
   const programmeLabel = student.programLevel === 'postgraduate' ? 'Post Graduate' : 'Under Graduate';
 
   const shortlistedColleges = recommendations.map((rec) => {
-    const course = courses.find((item) => item.courseId === rec.courseId);
+    const course = courses.find((item) => item.course_id === rec.courseId);
     return {
       rankFromVerifiedFitScore: rec.rank,
       fitScore: rec.fitScore,
