@@ -56,12 +56,6 @@ function providerKey(provider: 'groq' | 'gemini' | 'openrouter') {
   return specific || (legacyProvider === provider ? clean(process.env.AI_API_KEY) : undefined);
 }
 
-function groqFastModel() {
-  return clean(process.env.GROQ_FAST_MODEL)
-    || clean(process.env.GROQ_MODEL)
-    || 'openai/gpt-oss-20b';
-}
-
 function messageText(content: unknown) {
   if (typeof content === 'string') return content.trim();
   if (!Array.isArray(content)) return '';
@@ -147,81 +141,75 @@ function normalizeRow(value: unknown, provider: string): WebCollegeInsight | nul
 function buildPrompt(student: StudentInput) {
   const profile = {
     programme: student.programLevel || 'undergraduate',
-    subjects: student.subjectsInterest,
-    preferredLocations: student.preferredLocations,
+    subjects: student.subjectsInterest.slice(0, 6),
+    preferredLocations: student.preferredLocations.slice(0, 4),
     classXiiPercentage: student.marksXii,
     undergraduateDegree: student.undergraduateDegree,
     undergraduateSpecialisation: student.undergraduateSpecialisation,
     undergraduatePercentage: student.undergraduateFinalPercentage,
     budgetMaximumINR: student.budgetMax,
     hostelRequired: student.hostelRequired,
-    careerGoals: student.careerGoals?.slice(0, 250),
-    constraints: student.constraints?.slice(0, 250)
+    careerGoals: student.careerGoals?.slice(0, 160),
+    constraints: student.constraints?.slice(0, 160)
   };
-  return `Search the live web for up to 6 Indian universities or colleges that fit this student.
-Use only an official institution website or an authoritative regulator/government source such as UGC, AICTE, NAAC, NIRF, ICAR or a government domain. You must have actually found the supplied HTTPS source URL during the web search. Never invent or infer a URL. Omit a candidate completely if you cannot find an official or authoritative source.
 
-Return only a valid JSON object in this exact structure:
+  return `Use one web search to find up to 5 Indian universities or colleges that could fit this student and are not already in the supplied Future Plus database.
+Use only official institution websites or authoritative government/regulator sources. Never invent a campus or URL. If an official HTTPS source cannot be found, omit that candidate.
+Return ONLY JSON in this shape:
 {"results":[{"college_name":"", "city":null, "state":null, "fit_level":"Strong|Good|Moderate|Exploratory", "source_url":"https://..."}]}
-
-Do not include fees, accreditation, approval, eligibility, hostel, placement or scholarship claims in the response. Do not invent campuses or constituent colleges. Prefer the institution's own current programme or college page rather than a generic homepage when available.
+Do not include fees, accreditation, approvals, eligibility, hostel, placements or scholarships.
 Student: ${JSON.stringify(profile)}`;
-}
-
-async function formatGroqEvidence(apiKey: string, evidence: string) {
-  const model = groqFastModel();
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model,
-      messages: [{
-        role: 'user',
-        content: `Return valid JSON as {"results":[...]}. Convert only the supplied search evidence into at most 6 rows with college_name, city, state, fit_level and source_url. Keep only candidates with an explicit HTTPS official institution or authoritative regulator/government URL present in the evidence. Never invent URLs, campuses, fees, approvals, accreditation, eligibility, hostel, placements or scholarships.\n${evidence.slice(0, 4000)}`
-      }],
-      response_format: { type: 'json_object' },
-      reasoning_effort: 'low',
-      reasoning_format: 'hidden',
-      temperature: 0.1,
-      max_completion_tokens: 1200
-    }),
-    signal: AbortSignal.timeout(20000)
-  });
-  const responseText = await response.text();
-  if (!response.ok) throw new Error(`Search formatter HTTP ${response.status}: ${responseText.replace(/\s+/g, ' ').slice(0, 250)}`);
-  const data = JSON.parse(responseText) as {
-    choices?: Array<{ finish_reason?: string; message?: { content?: unknown } }>;
-  };
-  const content = messageText(data.choices?.[0]?.message?.content);
-  if (!content) throw new Error(`Search formatter returned empty content (${data.choices?.[0]?.finish_reason || 'unknown'}).`);
-  return content;
 }
 
 async function searchGroq(prompt: string) {
   const apiKey = providerKey('groq');
   if (!apiKey) return null;
-  const model = clean(process.env.GROQ_SEARCH_MODEL) || 'groq/compound';
+
+  // College discovery is intentionally a single-search, low-latency workload.
+  // Keep it isolated from the heavier general GROQ_SEARCH_MODEL setting.
+  const model = clean(process.env.GROQ_DISCOVERY_MODEL) || 'groq/compound-mini';
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+      'Groq-Model-Version': 'latest'
+    },
     body: JSON.stringify({
       model,
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
-      max_completion_tokens: 1400
+      compound_custom: {
+        tools: {
+          enabled_tools: ['web_search']
+        }
+      },
+      search_settings: {
+        country: 'india',
+        exclude_domains: [
+          'shiksha.com',
+          'collegedunia.com',
+          'careers360.com',
+          'getmyuni.com',
+          'ouatuniversity.edu.in'
+        ]
+      },
+      max_completion_tokens: 700
     }),
-    signal: AbortSignal.timeout(25000)
+    signal: AbortSignal.timeout(18000)
   });
+
   const responseText = await response.text();
-  if (!response.ok) throw new Error(`Live search HTTP ${response.status}: ${responseText.replace(/\s+/g, ' ').slice(0, 250)}`);
+  if (!response.ok) {
+    throw new Error(`Live search HTTP ${response.status}: ${responseText.replace(/\s+/g, ' ').slice(0, 250)}`);
+  }
+
   const data = JSON.parse(responseText) as {
-    choices?: Array<{ message?: { content?: unknown; executed_tools?: unknown[] } }>;
+    choices?: Array<{ message?: { content?: unknown } }>;
   };
   const content = messageText(data.choices?.[0]?.message?.content);
   if (extractRows(content).length) return content;
-  const evidence = JSON.stringify(data.choices?.[0]?.message?.executed_tools || []);
-  if (evidence !== '[]') return formatGroqEvidence(apiKey, evidence);
-  throw new Error('Live search returned no usable evidence.');
+  throw new Error('Live search returned no usable structured shortlist.');
 }
 
 async function searchGemini(prompt: string) {
@@ -236,7 +224,7 @@ async function searchGemini(prompt: string) {
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         tools: [{ google_search: {} }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 1400 }
+        generationConfig: { temperature: 0.1, maxOutputTokens: 900 }
       })
     }
   );
@@ -262,8 +250,8 @@ async function searchOpenRouter(prompt: string) {
     body: JSON.stringify({
       model: clean(process.env.OPENROUTER_MODEL) || 'openrouter/free',
       messages: [{ role: 'user', content: prompt }],
-      tools: [{ type: 'openrouter:web_search', parameters: { max_results: 6, max_total_results: 8 } }],
-      max_tokens: 1400,
+      tools: [{ type: 'openrouter:web_search', parameters: { max_results: 5, max_total_results: 6 } }],
+      max_tokens: 900,
       temperature: 0.1
     })
   });
@@ -296,6 +284,7 @@ export async function discoverWebCollegeInsights(
       run: () => searchOpenRouter(prompt)
     }
   ].filter((search) => enabledProviders.has(search.provider.replace(/-web$|-search$/, '')));
+
   const responses = await Promise.all(searches.map(async (search) => {
     if (!search.configured) return { ...search, text: null, error: null };
     try {
@@ -330,7 +319,8 @@ export async function discoverWebCollegeInsights(
       }
     }
   }
-  const insights = [...merged.values()].sort((a, b) => b.fit_score - a.fit_score).slice(0, 8);
+
+  const insights = [...merged.values()].sort((a, b) => b.fit_score - a.fit_score).slice(0, 6);
   const anyConfigured = responses.some((response) => response.configured);
   const anyFailure = responses.some((response) => Boolean(response.error));
   const genericStatus: ProviderStatus = !anyConfigured
@@ -340,6 +330,7 @@ export async function discoverWebCollegeInsights(
       : anyFailure
         ? { provider: 'live-search', status: 'failed', detail: 'Live discovery is temporarily unavailable. Please try again.' }
         : { provider: 'live-search', status: 'no_parseable_results', detail: parsedCount ? 'No candidates passed source validation.' : 'No suitable candidates were returned.' };
+
   return {
     insights,
     status: { searched_at: new Date().toISOString(), providers: [genericStatus], result_count: insights.length }
