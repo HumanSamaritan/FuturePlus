@@ -6,7 +6,7 @@ type GeminiResponse = {
 };
 
 type ChatCompletionResponse = {
-  choices?: Array<{ message?: { content?: string } }>;
+  choices?: Array<{ message?: { content?: string }> }>;
   error?: { message?: string; code?: string };
 };
 
@@ -103,8 +103,14 @@ function compactError(errorText: string) {
   }
 }
 
+function configuredOutputLimit() {
+  const configured = Number(cleanEnv(process.env.AI_MAX_OUTPUT_TOKENS));
+  return configured > 0 ? configured : null;
+}
+
 async function callGemini(apiKey: string, model: string, prompt: string) {
-  const maxOutputTokens = Number(cleanEnv(process.env.AI_MAX_OUTPUT_TOKENS)) || 3000;
+  const configured = configuredOutputLimit();
+  const maxOutputTokens = Math.min(configured || 1800, 2000);
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
     {
@@ -141,10 +147,10 @@ async function callOpenAiCompatible(
   model: string,
   prompt: string
 ) {
-  const configuredMaxTokens = Number(cleanEnv(process.env.AI_MAX_OUTPUT_TOKENS));
-  const maxOutputTokens = configuredMaxTokens > 0
-    ? configuredMaxTokens
-    : provider === 'groq' ? 3200 : 3000;
+  const configured = configuredOutputLimit();
+  const maxOutputTokens = provider === 'groq'
+    ? Math.min(configured || 1200, 1400)
+    : Math.min(configured || 1800, 2000);
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${apiKey}`
@@ -170,7 +176,7 @@ async function callOpenAiCompatible(
       messages: [
         {
           role: 'system',
-          content: 'You are a careful staff-facing education admissions assistant. Use only supplied data.'
+          content: 'You are a careful education counselling assistant. Use only supplied data, keep the report concise, and never invent admissions facts.'
         },
         { role: 'user', content: prompt }
       ],
@@ -195,6 +201,30 @@ async function callProvider(ai: AiConfiguration, prompt: string) {
     : callOpenAiCompatible(ai.provider, ai.apiKey, ai.baseUrl!, ai.model, prompt);
 }
 
+function compactStudentProfile(student: StudentInput) {
+  return {
+    programme: student.programLevel === 'postgraduate' ? 'Post Graduate' : 'Under Graduate',
+    classX: student.marksX ?? null,
+    classXii: student.marksXii ?? null,
+    board: student.board || null,
+    subjects: student.subjectsInterest.slice(0, 8),
+    preferredLocations: student.preferredLocations.slice(0, 6),
+    budget: [student.budgetMin ?? null, student.budgetMax ?? null],
+    hostelRequired: student.hostelRequired,
+    passion: student.passion?.slice(0, 350) || null,
+    purpose: student.purpose?.slice(0, 350) || null,
+    strengths: student.strengths?.slice(0, 300) || null,
+    constraints: student.constraints?.slice(0, 300) || null,
+    careerGoals: student.careerGoals?.slice(0, 350) || null,
+    supportRequired: student.supportRequired.slice(0, 8),
+    undergraduateDegree: student.undergraduateDegree || null,
+    undergraduateSpecialisation: student.undergraduateSpecialisation || null,
+    undergraduatePercentage: student.undergraduateFinalPercentage ?? null,
+    currentJobTitle: student.currentJobTitle || null,
+    workExperienceMonths: student.workExperienceMonths ?? null
+  };
+}
+
 export async function generateCounsellingSummary(
   student: StudentInput,
   courses: CourseWithCollege[],
@@ -203,10 +233,10 @@ export async function generateCounsellingSummary(
   const configuredProviders = getAiConfigurations();
   const programmeLabel = student.programLevel === 'postgraduate' ? 'Post Graduate' : 'Under Graduate';
 
-  const shortlistedColleges = recommendations.map((rec) => {
+  const shortlistedColleges = recommendations.slice(0, 5).map((rec) => {
     const course = courses.find((item) => item.course_id === rec.courseId);
     return {
-      rankFromVerifiedFitScore: rec.rank,
+      rank: rec.rank,
       fitScore: rec.fitScore,
       college: course?.college_name,
       course: course?.course_name,
@@ -219,39 +249,35 @@ export async function generateCounsellingSummary(
       highestPackage: course?.highest_package,
       hostelAvailable: course?.hostel_available,
       partnerStatus: course?.partner_status,
-      commissionBased: course?.commission_based,
       sourceUrl: course?.source_url,
-      verifiedFitReason: rec.reason
+      verifiedFitReason: rec.reason?.slice(0, 450)
     };
   });
 
   if (!configuredProviders.length) {
     return [
       `${student.firstName} ${student.lastName} is seeking ${programmeLabel} counselling in ${student.subjectsInterest.join(', ') || 'open subjects'}.`,
-      `The verified college-fit engine shortlisted ${shortlistedColleges.length} matching course options. The leading score is ${recommendations[0]?.fitScore ?? 'not available'}/100.`,
+      `The verified college-fit engine shortlisted ${recommendations.length} matching course options. The leading score is ${recommendations[0]?.fitScore ?? 'not available'}/100.`,
       'AI-assisted counselling is temporarily unavailable. The verified college-fit recommendations remain available for staff review.',
       'Staff must verify current eligibility, fees, placements, hostel availability and admissions dates directly with each institution before advising the student.'
     ].join('\n\n');
   }
 
-  const prompt = `Prepare a concise but useful ${programmeLabel} counselling review using ONLY the supplied student profile and college database shortlist. Never invent a college, course, fee, placement figure, admission rule or scholarship. Do not hide or exclude a stronger student-fit option because it is a non-partner. Partner status is provided only so staff understand the available operational relationship.
+  const prompt = `Prepare a concise ${programmeLabel} counselling review from ONLY the supplied profile and verified database shortlist. Never invent a college, course, fee, placement figure, eligibility rule, deadline or scholarship. The deterministic fit score remains authoritative.
 
-Use these headings:
+Use exactly these headings:
 1. Student fit overview
-2. Best-fit colleges (rank up to five, including course, fit score, total fee, location, hostel, placement evidence and the specific reasons it fits)
-3. Partner-network opportunities (identify preferred and pipeline partners separately)
-4. Strong verified-database non-partner alternatives (do not describe this as live web research)
+2. Best-fit colleges
+3. Partner-network opportunities
+4. Strong database alternatives
 5. Financial support and risk flags
 6. Questions for the next counselling conversation
-7. Data staff must verify before giving final advice
+7. What staff must verify
 
-Clearly say when data is missing. Treat every fee as the overall course cost when supplied.
+For best-fit colleges, use at most five rows and mention only supplied evidence. Clearly state when data is missing. Keep the full report concise enough for a counsellor to review quickly.
 
-Student profile:
-${JSON.stringify(student, null, 2)}
-
-Database-grounded shortlist:
-${JSON.stringify(shortlistedColleges, null, 2)}`;
+Student: ${JSON.stringify(compactStudentProfile(student))}
+Shortlist: ${JSON.stringify(shortlistedColleges)}`;
 
   const providerResults = await Promise.all(configuredProviders.map(async (
     ai
@@ -287,18 +313,8 @@ ${JSON.stringify(shortlistedColleges, null, 2)}`;
     return successfulResults[0].text;
   }
 
-  const synthesisPrompt = `Create one final Future Plus AI Insights report from the independent model analyses below.
-
-Rules:
-- Reconcile the analyses, remove repetition, and preserve useful points supported by the supplied data.
-- Do not use majority agreement as proof and do not introduce new facts.
-- If analyses disagree, prefer the verified fit scores and explicitly flag the disagreement for staff verification.
-- Keep the same seven headings requested in the original task.
-- Do not mention model brands inside the report.
-
-Independent analyses:
-${successfulResults.map((result, index) =>
-    `ANALYSIS ${index + 1}:\n${result.text.slice(0, 3000)}`
+  const synthesisPrompt = `Consolidate the analyses below into one concise Future Plus report. Preserve only supplied facts, prefer deterministic fit scores when analyses disagree, keep the same seven headings, and do not mention provider/model brands.\n\n${successfulResults.map((result, index) =>
+    `ANALYSIS ${index + 1}:\n${result.text.slice(0, 1800)}`
   ).join('\n\n')}`;
 
   try {
