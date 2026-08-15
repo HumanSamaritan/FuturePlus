@@ -36,8 +36,6 @@ function storedStudentToInput(student: Record<string, any>): StudentInput {
     budgetMax: student.budget_max,
     salaryExpectation: student.salary_expectation,
     hostelRequired: Boolean(student.hostel_required),
-    loanRequired: Boolean(student.loan_required),
-    belowPovertyLine: Boolean(student.below_poverty_line),
     passion: student.passion || undefined,
     purpose: student.purpose || undefined,
     strengths: student.strengths || undefined,
@@ -97,9 +95,6 @@ export async function regenerateCounsellingSummaryAction(formData: FormData) {
     (course) => (course.program_level || 'undergraduate') === studentInput.programLevel
   );
 
-  // Always recalculate recommendations from the latest student profile and
-  // current catalogue. Never reuse stale recommendation rows after a profile
-  // or scoring-model change.
   const recommendations = generateRecommendations(studentInput, courses);
   const [summary, webDiscovery] = await Promise.all([
     generateCounsellingSummary(studentInput, courses, recommendations),
