@@ -6,7 +6,7 @@ type GeminiResponse = {
 };
 
 type ChatCompletionResponse = {
-  choices?: Array<{ message?: { content?: string }> }>;
+  choices?: Array<{ message?: { content?: string } }>;
   error?: { message?: string; code?: string };
 };
 
@@ -204,7 +204,7 @@ export async function generateCounsellingSummary(
   const programmeLabel = student.programLevel === 'postgraduate' ? 'Post Graduate' : 'Under Graduate';
 
   const shortlistedColleges = recommendations.map((rec) => {
-    const course = courses.find((item) => item.course_id === rec.courseId);
+    const course = courses.find((item) => item.courseId === rec.courseId);
     return {
       rankFromVerifiedFitScore: rec.rank,
       fitScore: rec.fitScore,
