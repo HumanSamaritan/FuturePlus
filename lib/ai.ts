@@ -18,6 +18,37 @@ type AiConfiguration = {
   baseUrl?: string;
 };
 
+export type FutureFitStream = {
+  stream: string;
+  alignmentScore: number;
+  reasoning: string;
+};
+
+export type FutureFitAssessment = {
+  version: 'future-fit-v1';
+  status: 'ready' | 'unavailable';
+  studentSnapshot: {
+    chosenStream: string;
+    programme: string;
+    academics: string;
+    passion: string;
+    purpose: string;
+    careerGoal: string;
+  };
+  observedStrengths: string[];
+  observedSkills: string[];
+  digitalProfileEvidence: string[];
+  predictedStreams: FutureFitStream[];
+  chosenStreamAlignment: {
+    level: 'Strong' | 'Partial' | 'Different direction' | 'Insufficient evidence';
+    score: number | null;
+    reasoning: string;
+  };
+  staffAssessment: string;
+  exploreNext: string[];
+  studentNote: string;
+};
+
 const PROVIDER_DEFAULTS: Record<AiProvider, { model: string; baseUrl?: string }> = {
   gemini: { model: 'gemini-2.5-flash' },
   groq: {
@@ -110,7 +141,7 @@ function configuredOutputLimit() {
 
 async function callGemini(apiKey: string, model: string, prompt: string) {
   const configured = configuredOutputLimit();
-  const maxOutputTokens = Math.min(configured || 1800, 2000);
+  const maxOutputTokens = Math.min(configured || 1500, 1800);
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
     {
@@ -149,8 +180,8 @@ async function callOpenAiCompatible(
 ) {
   const configured = configuredOutputLimit();
   const maxOutputTokens = provider === 'groq'
-    ? Math.min(configured || 1200, 1400)
-    : Math.min(configured || 1800, 2000);
+    ? Math.min(configured || 1100, 1300)
+    : Math.min(configured || 1500, 1800);
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${apiKey}`
@@ -176,7 +207,7 @@ async function callOpenAiCompatible(
       messages: [
         {
           role: 'system',
-          content: 'You are a careful education counselling assistant. Use only supplied data, keep the report concise, and never invent admissions facts.'
+          content: 'You are a careful education and career-fit assessment assistant. Use only supplied student data. Never claim to have read an external social profile from a URL alone. Return valid JSON only.'
         },
         { role: 'user', content: prompt }
       ],
@@ -201,91 +232,230 @@ async function callProvider(ai: AiConfiguration, prompt: string) {
     : callOpenAiCompatible(ai.provider, ai.apiKey, ai.baseUrl!, ai.model, prompt);
 }
 
+function cleanText(value: unknown, fallback = 'Not provided') {
+  const text = String(value ?? '').replace(/\s+/g, ' ').trim();
+  return text || fallback;
+}
+
+function clampScore(value: unknown) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 0;
+  return Math.max(0, Math.min(100, Math.round(number)));
+}
+
 function compactStudentProfile(student: StudentInput) {
   return {
     programme: student.programLevel === 'postgraduate' ? 'Post Graduate' : 'Under Graduate',
-    classX: student.marksX ?? null,
-    classXii: student.marksXii ?? null,
-    board: student.board || null,
-    subjects: student.subjectsInterest.slice(0, 8),
-    preferredLocations: student.preferredLocations.slice(0, 6),
-    budget: [student.budgetMin ?? null, student.budgetMax ?? null],
-    hostelRequired: student.hostelRequired,
-    passion: student.passion?.slice(0, 350) || null,
-    purpose: student.purpose?.slice(0, 350) || null,
-    strengths: student.strengths?.slice(0, 300) || null,
-    constraints: student.constraints?.slice(0, 300) || null,
-    careerGoals: student.careerGoals?.slice(0, 350) || null,
-    supportRequired: student.supportRequired.slice(0, 8),
-    undergraduateDegree: student.undergraduateDegree || null,
-    undergraduateSpecialisation: student.undergraduateSpecialisation || null,
-    undergraduatePercentage: student.undergraduateFinalPercentage ?? null,
+    chosenStreams: student.subjectsInterest.slice(0, 6),
+    academics: {
+      classXPercentage: student.marksX ?? null,
+      classXYear: student.yearX ?? null,
+      classXiiPercentage: student.marksXii ?? null,
+      classXiiYear: student.yearXii ?? null,
+      board: student.board || null,
+      undergraduateDegree: student.undergraduateDegree || null,
+      undergraduateSpecialisation: student.undergraduateSpecialisation || null,
+      undergraduatePercentage: student.undergraduateFinalPercentage ?? null
+    },
+    passion: student.passion?.slice(0, 500) || null,
+    purpose: student.purpose?.slice(0, 500) || null,
+    selfReportedStrengths: student.strengths?.slice(0, 500) || null,
+    specialSkills: student.specialSkills?.slice(0, 500) || null,
+    accolades: student.accolades?.slice(0, 500) || null,
+    extracurricularActivities: student.extracurricularActivities?.slice(0, 500) || null,
+    rewards: student.rewards?.slice(0, 400) || null,
+    certifications: student.certifications?.slice(0, 500) || null,
+    languages: student.languages?.slice(0, 300) || null,
+    workExperience: student.workExperience?.slice(0, 500) || null,
     currentJobTitle: student.currentJobTitle || null,
-    workExperienceMonths: student.workExperienceMonths ?? null
+    workExperienceMonths: student.workExperienceMonths ?? null,
+    careerGoals: student.careerGoals?.slice(0, 500) || null,
+    constraints: student.constraints?.slice(0, 400) || null,
+    supportRequired: student.supportRequired.slice(0, 10),
+    digitalProfileLinks: {
+      linkedin: student.linkedinUrl || null,
+      facebook: student.facebookUrl || null,
+      instagram: student.instagramUrl || null,
+      x: student.xUrl || null,
+      portfolio: student.portfolioUrl || null
+    }
   };
+}
+
+function unavailableAssessment(student: StudentInput): FutureFitAssessment {
+  const chosenStream = student.subjectsInterest.join(', ') || 'Not yet selected';
+  return {
+    version: 'future-fit-v1',
+    status: 'unavailable',
+    studentSnapshot: {
+      chosenStream,
+      programme: student.programLevel === 'postgraduate' ? 'Post Graduate' : 'Under Graduate',
+      academics: 'Assessment temporarily unavailable.',
+      passion: cleanText(student.passion),
+      purpose: cleanText(student.purpose),
+      careerGoal: cleanText(student.careerGoals)
+    },
+    observedStrengths: [],
+    observedSkills: [],
+    digitalProfileEvidence: ['External profile content was not used. Staff can rely on the student-entered profile while AI assessment is unavailable.'],
+    predictedStreams: [],
+    chosenStreamAlignment: {
+      level: 'Insufficient evidence',
+      score: null,
+      reasoning: 'AI-assisted stream-fit assessment is temporarily unavailable.'
+    },
+    staffAssessment: 'Use the student-entered profile and deterministic course recommendations until the assessment can be regenerated.',
+    exploreNext: ['Review the student’s stated passion, purpose, academics and chosen stream with a counsellor.'],
+    studentNote: 'This assessment is guidance only. Your informed education and career decision remains yours.'
+  };
+}
+
+function extractJson(text: string) {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1]?.trim();
+  for (const candidate of [fenced, text.trim()].filter(Boolean) as string[]) {
+    try {
+      return JSON.parse(candidate) as Record<string, unknown>;
+    } catch {
+      const start = candidate.indexOf('{');
+      const end = candidate.lastIndexOf('}');
+      if (start >= 0 && end > start) {
+        try {
+          return JSON.parse(candidate.slice(start, end + 1)) as Record<string, unknown>;
+        } catch {
+          // Try next candidate.
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function normalizeAssessment(value: Record<string, unknown> | null, student: StudentInput): FutureFitAssessment | null {
+  if (!value) return null;
+  const snapshot = (value.studentSnapshot || {}) as Record<string, unknown>;
+  const alignment = (value.chosenStreamAlignment || {}) as Record<string, unknown>;
+  const validAlignmentLevels = ['Strong', 'Partial', 'Different direction', 'Insufficient evidence'] as const;
+  const rawLevel = cleanText(alignment.level, 'Insufficient evidence');
+  const alignmentLevel = validAlignmentLevels.includes(rawLevel as typeof validAlignmentLevels[number])
+    ? rawLevel as typeof validAlignmentLevels[number]
+    : 'Insufficient evidence';
+  const streams = Array.isArray(value.predictedStreams) ? value.predictedStreams : [];
+
+  return {
+    version: 'future-fit-v1',
+    status: 'ready',
+    studentSnapshot: {
+      chosenStream: cleanText(snapshot.chosenStream, student.subjectsInterest.join(', ') || 'Not yet selected'),
+      programme: cleanText(snapshot.programme, student.programLevel === 'postgraduate' ? 'Post Graduate' : 'Under Graduate'),
+      academics: cleanText(snapshot.academics),
+      passion: cleanText(snapshot.passion, cleanText(student.passion)),
+      purpose: cleanText(snapshot.purpose, cleanText(student.purpose)),
+      careerGoal: cleanText(snapshot.careerGoal, cleanText(student.careerGoals))
+    },
+    observedStrengths: (Array.isArray(value.observedStrengths) ? value.observedStrengths : [])
+      .slice(0, 6)
+      .map((item) => cleanText(item))
+      .filter((item) => item !== 'Not provided'),
+    observedSkills: (Array.isArray(value.observedSkills) ? value.observedSkills : [])
+      .slice(0, 8)
+      .map((item) => cleanText(item))
+      .filter((item) => item !== 'Not provided'),
+    digitalProfileEvidence: (Array.isArray(value.digitalProfileEvidence) ? value.digitalProfileEvidence : [])
+      .slice(0, 5)
+      .map((item) => cleanText(item))
+      .filter((item) => item !== 'Not provided'),
+    predictedStreams: streams.slice(0, 3).map((item) => {
+      const stream = (item || {}) as Record<string, unknown>;
+      return {
+        stream: cleanText(stream.stream, 'Explore further'),
+        alignmentScore: clampScore(stream.alignmentScore),
+        reasoning: cleanText(stream.reasoning, 'Discuss this option with a counsellor before drawing a conclusion.')
+      };
+    }),
+    chosenStreamAlignment: {
+      level: alignmentLevel,
+      score: alignment.score == null ? null : clampScore(alignment.score),
+      reasoning: cleanText(alignment.reasoning, 'Discuss the chosen stream against the full profile with a counsellor.')
+    },
+    staffAssessment: cleanText(value.staffAssessment, 'Review the chosen stream against the full student profile.'),
+    exploreNext: (Array.isArray(value.exploreNext) ? value.exploreNext : [])
+      .slice(0, 6)
+      .map((item) => cleanText(item))
+      .filter((item) => item !== 'Not provided'),
+    studentNote: cleanText(
+      value.studentNote,
+      'This assessment is guidance rather than a verdict. Your informed education and career decision remains yours.'
+    )
+  };
+}
+
+function assessmentPrompt(student: StudentInput) {
+  return `Create a Future Plus Student Future-Fit Assessment using ONLY the supplied profile data.
+
+Important rules:
+- Respect the student's stated education choice. This assessment advises; it does not overrule the student.
+- Predict up to 3 best-fit academic/career streams from the evidence, even if they differ from the chosen stream.
+- Separately assess the chosen stream as Strong, Partial, Different direction, or Insufficient evidence.
+- Explain any mismatch to staff neutrally and constructively.
+- Do not infer personality, achievements, skills or interests merely from a LinkedIn/social-media URL.
+- A supplied URL proves only that a link was provided. Unless actual profile text is supplied in this payload, say that external profile content was not independently retrieved.
+- You MAY use student-entered accolades, extracurriculars, special skills, certifications, languages, work experience, passion, purpose, strengths and career goals as evidence.
+- Do not diagnose mental health, aptitude or intelligence. Do not make admissions-eligibility claims.
+- Alignment scores are advisory evidence-fit indicators, not probabilities of success.
+- Keep every field concise and student-shareable except staffAssessment, which is staff-facing.
+
+Return VALID JSON ONLY, no Markdown, matching exactly this shape:
+{
+  "studentSnapshot": {
+    "chosenStream": "string",
+    "programme": "string",
+    "academics": "1 concise sentence",
+    "passion": "string",
+    "purpose": "string",
+    "careerGoal": "string"
+  },
+  "observedStrengths": ["up to 6 evidence-based strengths"],
+  "observedSkills": ["up to 8 evidence-based skills or developing capabilities"],
+  "digitalProfileEvidence": ["what can and cannot be concluded from supplied digital-profile information"],
+  "predictedStreams": [
+    {"stream":"stream 1","alignmentScore":0,"reasoning":"concise evidence-based reason"},
+    {"stream":"stream 2","alignmentScore":0,"reasoning":"concise evidence-based reason"},
+    {"stream":"stream 3","alignmentScore":0,"reasoning":"concise evidence-based reason"}
+  ],
+  "chosenStreamAlignment": {
+    "level":"Strong|Partial|Different direction|Insufficient evidence",
+    "score":0,
+    "reasoning":"why the chosen stream does or does not align with the supplied profile"
+  },
+  "staffAssessment":"staff-only explanation of the key alignment or mismatch and what to discuss",
+  "exploreNext":["up to 6 practical next steps such as projects, shadowing, subject choices, informational interviews or courses"],
+  "studentNote":"respectful note affirming that this is guidance and the student's informed choice remains primary"
+}
+
+Student profile: ${JSON.stringify(compactStudentProfile(student))}`;
 }
 
 export async function generateCounsellingSummary(
   student: StudentInput,
-  courses: CourseWithCollege[],
-  recommendations: RecommendationResult[]
+  _courses: CourseWithCollege[],
+  _recommendations: RecommendationResult[]
 ) {
   const configuredProviders = getAiConfigurations();
-  const programmeLabel = student.programLevel === 'postgraduate' ? 'Post Graduate' : 'Under Graduate';
-
-  const shortlistedColleges = recommendations.slice(0, 5).map((rec) => {
-    const course = courses.find((item) => item.course_id === rec.courseId);
-    return {
-      rank: rec.rank,
-      fitScore: rec.fitScore,
-      college: course?.college_name,
-      course: course?.course_name,
-      subjectArea: course?.subject_area,
-      location: [course?.city, course?.state, course?.country].filter(Boolean).join(', '),
-      totalCourseFee: course?.total_fee,
-      currency: course?.currency,
-      placementCount: course?.placement_count,
-      averagePackage: course?.average_package,
-      highestPackage: course?.highest_package,
-      hostelAvailable: course?.hostel_available,
-      partnerStatus: course?.partner_status,
-      sourceUrl: course?.source_url,
-      verifiedFitReason: rec.reason?.slice(0, 450)
-    };
-  });
-
   if (!configuredProviders.length) {
-    return [
-      `${student.firstName} ${student.lastName} is seeking ${programmeLabel} counselling in ${student.subjectsInterest.join(', ') || 'open subjects'}.`,
-      `The verified college-fit engine shortlisted ${recommendations.length} matching course options. The leading score is ${recommendations[0]?.fitScore ?? 'not available'}/100.`,
-      'AI-assisted counselling is temporarily unavailable. The verified college-fit recommendations remain available for staff review.',
-      'Staff must verify current eligibility, fees, placements, hostel availability and admissions dates directly with each institution before advising the student.'
-    ].join('\n\n');
+    return JSON.stringify(unavailableAssessment(student));
   }
 
-  const prompt = `Prepare a concise ${programmeLabel} counselling review from ONLY the supplied profile and verified database shortlist. Never invent a college, course, fee, placement figure, eligibility rule, deadline or scholarship. The deterministic fit score remains authoritative.
-
-Use exactly these headings:
-1. Student fit overview
-2. Best-fit colleges
-3. Partner-network opportunities
-4. Strong database alternatives
-5. Financial support and risk flags
-6. Questions for the next counselling conversation
-7. What staff must verify
-
-For best-fit colleges, use at most five rows and mention only supplied evidence. Clearly state when data is missing. Keep the full report concise enough for a counsellor to review quickly.
-
-Student: ${JSON.stringify(compactStudentProfile(student))}
-Shortlist: ${JSON.stringify(shortlistedColleges)}`;
-
+  const prompt = assessmentPrompt(student);
   const providerResults = await Promise.all(configuredProviders.map(async (
     ai
-  ): Promise<{ ai: AiConfiguration; text?: string; error?: string }> => {
+  ): Promise<{ ai: AiConfiguration; assessment?: FutureFitAssessment; error?: string }> => {
     try {
-      return { ai, text: await callProvider(ai, prompt) };
+      const text = await callProvider(ai, prompt);
+      const assessment = normalizeAssessment(extractJson(text), student);
+      if (!assessment) throw new Error('Provider returned an invalid Future-Fit JSON payload.');
+      return { ai, assessment };
     } catch (error) {
-      console.error('[ai] provider insight request failed', {
+      console.error('[ai] provider Future-Fit request failed', {
         provider: ai.provider,
         model: ai.model,
         error
@@ -296,33 +466,22 @@ Shortlist: ${JSON.stringify(shortlistedColleges)}`;
       };
     }
   }));
-  const successfulResults = providerResults.filter(
-    (result): result is { ai: AiConfiguration; text: string } => Boolean(result.text)
+
+  const successful = providerResults.filter(
+    (result): result is { ai: AiConfiguration; assessment: FutureFitAssessment } => Boolean(result.assessment)
   );
 
-  if (!successfulResults.length) {
-    console.error('[ai] all configured insight providers failed', providerResults.map((result) => ({
+  if (!successful.length) {
+    console.error('[ai] all configured Future-Fit providers failed', providerResults.map((result) => ({
       provider: result.ai.provider,
       model: result.ai.model,
       error: result.error || 'no response'
     })));
-    return 'AI-assisted counselling is temporarily unavailable. Please try again shortly. The verified college-fit recommendations remain available for staff review.';
+    return JSON.stringify(unavailableAssessment(student));
   }
 
-  if (successfulResults.length === 1) {
-    return successfulResults[0].text;
-  }
-
-  const synthesisPrompt = `Consolidate the analyses below into one concise Future Plus report. Preserve only supplied facts, prefer deterministic fit scores when analyses disagree, keep the same seven headings, and do not mention provider/model brands.\n\n${successfulResults.map((result, index) =>
-    `ANALYSIS ${index + 1}:\n${result.text.slice(0, 1800)}`
-  ).join('\n\n')}`;
-
-  try {
-    return await callProvider(successfulResults[0].ai, synthesisPrompt);
-  } catch (error) {
-    console.error('[ai] multi-provider synthesis failed', error);
-    return successfulResults.map((result, index) =>
-      `Independent AI Insight ${index + 1}\n${result.text}`
-    ).join('\n\n---\n\n');
-  }
+  // The Preview currently uses one provider. If multiple providers are enabled,
+  // prefer the configured primary provider's normalized assessment rather than
+  // spending a second LLM call on synthesis and increasing latency/token pressure.
+  return JSON.stringify(successful[0].assessment);
 }
