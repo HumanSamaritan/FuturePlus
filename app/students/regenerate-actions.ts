@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { generateCounsellingSummary } from '@/lib/ai';
 import { getCourseCatalog } from '@/lib/data';
 import { isAllowedUserEmail } from '@/lib/env';
-import { assessmentMetadata, attachAssessmentMetadata, studentAiFingerprint, withDocumentEvidence } from '@/lib/profile-evidence';
+import { assessmentMetadata, attachAssessmentMetadata, reconcileAssessmentEvidence, studentAiFingerprint, withDocumentEvidence } from '@/lib/profile-evidence';
 import { generateRecommendations } from '@/lib/recommendation';
 import { storedStudentToInput } from '@/lib/student-input';
 import { createClient } from '@/lib/supabase/server';
@@ -25,14 +25,15 @@ export async function regenerateCounsellingSummaryAction(formData: FormData) {
   const currentFingerprint = studentAiFingerprint(studentInput);
   const stored = assessmentMetadata(student.ai_summary);
   if (stored.status === 'ready' && stored.fingerprint === currentFingerprint) {
-    redirect(`/students/${studentId}`);
+    redirect(`/students/${studentId}?assessment=cache`);
   }
 
   const allCourses = await getCourseCatalog();
   const courses = allCourses.filter((course) => (course.program_level || 'undergraduate') === studentInput.programLevel);
   const recommendations = generateRecommendations(studentInput, courses);
   const generated = await generateCounsellingSummary(withDocumentEvidence(studentInput), courses, recommendations);
-  const summary = attachAssessmentMetadata(generated, currentFingerprint);
+  const reconciled = reconcileAssessmentEvidence(generated, studentInput);
+  const summary = attachAssessmentMetadata(reconciled, currentFingerprint);
 
   if (recommendations.length) {
     const { error } = await supabase.from('recommendations').upsert(
@@ -65,5 +66,5 @@ export async function regenerateCounsellingSummaryAction(formData: FormData) {
 
   revalidatePath(`/students/${studentId}`);
   revalidatePath('/dashboard');
-  redirect(`/students/${studentId}`);
+  redirect(`/students/${studentId}?assessment=generated`);
 }

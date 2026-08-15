@@ -1,13 +1,16 @@
 import { createHash } from 'crypto';
 import type { StudentInput } from './types';
 
+export const AI_ASSESSMENT_LOGIC_VERSION = 'future-fit-evidence-v2';
+
 function evidenceExcerpt(...parts: Array<string | undefined>) {
   const joined = parts.filter(Boolean).join('\n\n').replace(/\s+/g, ' ').trim();
-  return joined ? joined.slice(0, 1200) : undefined;
+  return joined ? joined.slice(0, 1600) : undefined;
 }
 
 export function studentAiFingerprint(input: StudentInput) {
   const relevant = {
+    assessmentLogicVersion: AI_ASSESSMENT_LOGIC_VERSION,
     programLevel: input.programLevel,
     yearX: input.yearX,
     marksX: input.marksX,
@@ -55,15 +58,19 @@ export function studentAiFingerprint(input: StudentInput) {
 export function withDocumentEvidence(input: StudentInput): StudentInput {
   const linkedinEvidence = evidenceExcerpt(input.linkedinProfileText, input.linkedinProfilePdfText);
   const resumeEvidence = evidenceExcerpt(input.resumeText, input.resumeFileText);
+
+  // compactStudentProfile currently caps workExperience/specialSkills. Put the
+  // newly supplied document evidence first so it is not truncated behind older
+  // free-text fields before reaching the AI provider.
   return {
     ...input,
     workExperience: evidenceExcerpt(
-      input.workExperience,
-      linkedinEvidence ? `LinkedIn evidence supplied for review: ${linkedinEvidence}` : undefined
+      linkedinEvidence ? `LinkedIn profile content supplied by the student/staff for assessment: ${linkedinEvidence}` : undefined,
+      input.workExperience
     ),
     specialSkills: evidenceExcerpt(
-      input.specialSkills,
-      resumeEvidence ? `Resume/CV evidence supplied for review: ${resumeEvidence}` : undefined
+      resumeEvidence ? `Resume/CV content supplied by the student/staff for assessment: ${resumeEvidence}` : undefined,
+      input.specialSkills
     )
   };
 }
@@ -81,10 +88,47 @@ export function assessmentMetadata(raw: string | null | undefined) {
   }
 }
 
+export function reconcileAssessmentEvidence(raw: string, input: StudentInput) {
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return raw;
+
+    const evidence: string[] = Array.isArray(parsed.digitalProfileEvidence)
+      ? parsed.digitalProfileEvidence.filter((item: unknown) => typeof item === 'string')
+      : [];
+
+    const hasLinkedInText = Boolean(input.linkedinProfileText?.trim() || input.linkedinProfilePdfText?.trim());
+    const hasResumeText = Boolean(input.resumeText?.trim() || input.resumeFileText?.trim());
+
+    const filtered = evidence.filter((item) => {
+      const lower = item.toLowerCase();
+      if (hasLinkedInText && lower.includes('linkedin') && (lower.includes('no content') || lower.includes('not supplied') || lower.includes('not provided'))) return false;
+      if (hasResumeText && lower.includes('resume') && (lower.includes('no content') || lower.includes('not supplied') || lower.includes('not provided'))) return false;
+      return true;
+    });
+
+    if (hasLinkedInText) {
+      filtered.unshift('LinkedIn profile content was supplied by the student/staff and was considered as self-reported profile evidence. FuturePlus did not independently retrieve or verify the content from LinkedIn.');
+    } else if (input.linkedinUrl) {
+      filtered.unshift('A LinkedIn URL was supplied as a reference. No LinkedIn profile content was independently retrieved from the URL.');
+    }
+
+    if (hasResumeText) {
+      filtered.push('Resume/CV content supplied by the student/staff was included as self-reported evidence for this assessment.');
+    }
+
+    parsed.digitalProfileEvidence = [...new Set(filtered)].slice(0, 6);
+    return JSON.stringify(parsed);
+  } catch {
+    return raw;
+  }
+}
+
 export function attachAssessmentMetadata(raw: string, fingerprint: string) {
   try {
     const parsed = JSON.parse(raw);
     parsed.profileFingerprint = fingerprint;
+    parsed.assessmentLogicVersion = AI_ASSESSMENT_LOGIC_VERSION;
     parsed.generatedAt = new Date().toISOString();
     return JSON.stringify(parsed);
   } catch {

@@ -69,6 +69,23 @@ export default function FutureFitAssessmentView({ rawSummary }: Props) {
         </section>
         <section className={styles.panel}><span className={styles.eyebrow}>What to explore next</span>{assessment.exploreNext.length ? <ol className={styles.numberedList}>{assessment.exploreNext.map((item) => <li key={item}>{item}</li>)}</ol> : <p className={styles.muted}>Discuss practical exploration steps with the counsellor.</p>}</section>
       </div>
+
+      <section className={styles.panel}>
+        <span className={styles.eyebrow}>International application & immigration readiness</span>
+        <h3>Digital-footprint review is advisory, not a visa decision</h3>
+        <ul className={styles.cleanList}>
+          <li>Visa and study-permit requirements differ by destination and can change. Staff should verify the current official immigration authority before advising the student.</li>
+          <li>For U.S. F, M and J visa applicants, the U.S. Department of State currently applies online-presence review as part of screening and vetting. FuturePlus should help the student keep application information accurate and consistent, but it must not infer visa eligibility from opinions or social-media content.</li>
+          <li>FuturePlus does not scrape private/restricted social accounts, does not assign an automated visa-risk score, and does not make admission or immigration decisions.</li>
+        </ul>
+        <div className="actions">
+          <a className="secondary-button" href="https://travel.state.gov/content/travel/en/News/visas-news/announcement-of-expanded-screening-and-vetting-for-visa-applicants.html" target="_blank" rel="noreferrer">U.S. State Department guidance</a>
+          <a className="secondary-button" href="https://www.gov.uk/student-visa" target="_blank" rel="noreferrer">UK Student visa</a>
+          <a className="secondary-button" href="https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit.html" target="_blank" rel="noreferrer">Canada study permit</a>
+          <a className="secondary-button" href="https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/student-500" target="_blank" rel="noreferrer">Australia Student visa</a>
+        </div>
+      </section>
+
       <section className={styles.staffPanel}><span className={styles.eyebrow}>Staff-only assessment</span><p>{assessment.staffAssessment}</p></section>
     </div>
   );
