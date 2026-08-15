@@ -21,7 +21,7 @@ type AiConfiguration = {
 const PROVIDER_DEFAULTS: Record<AiProvider, { model: string; baseUrl?: string }> = {
   gemini: { model: 'gemini-2.5-flash' },
   groq: {
-    model: 'llama-3.1-8b-instant',
+    model: 'openai/gpt-oss-120b',
     baseUrl: 'https://api.groq.com/openai/v1'
   },
   openrouter: {
@@ -36,6 +36,16 @@ const PROVIDER_DEFAULTS: Record<AiProvider, { model: string; baseUrl?: string }>
 
 function cleanEnv(value?: string) {
   return value?.trim().replace(/^['"]|['"]$/g, '');
+}
+
+function providerModel(provider: AiProvider) {
+  if (provider === 'groq') {
+    return cleanEnv(process.env.GROQ_PRIMARY_MODEL)
+      || cleanEnv(process.env.GROQ_MODEL)
+      || PROVIDER_DEFAULTS.groq.model;
+  }
+  return cleanEnv(process.env[`${provider.toUpperCase()}_MODEL`])
+    || PROVIDER_DEFAULTS[provider].model;
 }
 
 function getAiConfigurations(): AiConfiguration[] {
@@ -56,8 +66,7 @@ function getAiConfigurations(): AiConfiguration[] {
     return [{
       provider,
       apiKey,
-      model: (cleanEnv(process.env[`${prefix}_MODEL`]) || defaults.model)
-        .replace(/^models\//i, ''),
+      model: providerModel(provider).replace(/^models\//i, ''),
       baseUrl: (cleanEnv(process.env[`${prefix}_BASE_URL`]) || defaults.baseUrl)
         ?.replace(/\/+$/, '')
     }];
@@ -75,7 +84,7 @@ function getAiConfigurations(): AiConfiguration[] {
     configurations.push({
       provider,
       apiKey,
-      model: (cleanEnv(process.env.AI_MODEL) || defaults.model).replace(/^models\//i, ''),
+      model: (cleanEnv(process.env.AI_MODEL) || providerModel(provider)).replace(/^models\//i, ''),
       baseUrl: (cleanEnv(process.env.AI_BASE_URL) || defaults.baseUrl)?.replace(/\/+$/, '')
     });
   }
@@ -137,7 +146,7 @@ async function callOpenAiCompatible(
   const configuredMaxTokens = Number(cleanEnv(process.env.AI_MAX_OUTPUT_TOKENS));
   const maxOutputTokens = configuredMaxTokens > 0
     ? configuredMaxTokens
-    : provider === 'groq' ? 2600 : 3000;
+    : provider === 'groq' ? 3200 : 3000;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${apiKey}`
@@ -146,6 +155,14 @@ async function callOpenAiCompatible(
     headers['HTTP-Referer'] = cleanEnv(process.env.NEXT_PUBLIC_SITE_URL) || 'https://future-plus.vercel.app';
     headers['X-Title'] = 'Future Plus Education';
   }
+
+  const groqGptOss = provider === 'groq' && model.startsWith('openai/gpt-oss-');
+  const tokenLimit = provider === 'groq'
+    ? { max_completion_tokens: maxOutputTokens }
+    : { max_tokens: maxOutputTokens };
+  const reasoning = groqGptOss
+    ? { reasoning_effort: 'low', reasoning_format: 'hidden' }
+    : {};
 
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
@@ -159,7 +176,8 @@ async function callOpenAiCompatible(
         },
         { role: 'user', content: prompt }
       ],
-      max_tokens: maxOutputTokens,
+      ...tokenLimit,
+      ...reasoning,
       temperature: 0.2,
       stream: false
     })
