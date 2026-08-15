@@ -6,7 +6,7 @@ type GeminiResponse = {
 };
 
 type ChatCompletionResponse = {
-  choices?: Array<{ message?: { content?: string }> }>;
+  choices?: Array<{ message?: { content?: string } }>;
   error?: { message?: string; code?: string };
 };
 
