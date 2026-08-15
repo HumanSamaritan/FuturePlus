@@ -5,6 +5,7 @@ export type WebCollegeInsight = {
   course_name?: string;
   subject_area?: string;
   program_level: 'undergraduate' | 'postgraduate';
+  ownership?: 'private';
   total_fee?: number | null;
   currency?: string;
   duration?: string | null;
@@ -75,7 +76,7 @@ function extractDelimitedRows(text: string): unknown[] {
     .filter((line) => line.startsWith('RESULT|||'))
     .map((line) => {
       const parts = line.split('|||').map((part) => part.trim());
-      if (parts.length < 8) return null;
+      if (parts.length < 9) return null;
       return {
         college_name: parts[1],
         course_name: parts[2],
@@ -83,7 +84,8 @@ function extractDelimitedRows(text: string): unknown[] {
         state: parts[4] || null,
         fit_level: parts[5] || 'Exploratory',
         subject_area: parts[6] || null,
-        source_url: parts.slice(7).join('|||').trim()
+        ownership: parts[7]?.toLowerCase(),
+        source_url: parts.slice(8).join('|||').trim()
       };
     })
     .filter(Boolean) as unknown[];
@@ -147,20 +149,22 @@ function normalizeRow(value: unknown, provider: string): WebCollegeInsight | nul
   const collegeName = String(row.college_name || row.university_name || '').trim();
   const courseName = String(row.course_name || '').trim();
   const subjectArea = String(row.subject_area || '').trim();
+  const ownership = String(row.ownership || '').trim().toLowerCase();
   const sourceUrl = safeSourceUrl(row.source_url);
-  if (!collegeName || !sourceUrl) return null;
+  if (!collegeName || !sourceUrl || ownership !== 'private') return null;
   const level = fitLevel(row.fit_level);
   return {
     college_name: collegeName,
     course_name: courseName || undefined,
     subject_area: subjectArea || undefined,
     program_level: 'undergraduate',
+    ownership: 'private',
     city: row.city ? String(row.city).trim() : null,
     state: row.state ? String(row.state).trim() : null,
     country: 'India',
     fit_level: level,
     fit_score: fitScore(level),
-    fit_feedback: 'Potential chosen-stream match discovered from the web. Staff must verify current programme availability, campus, eligibility, fees, approvals/accreditation and admissions details on the linked official source before advising the student.',
+    fit_feedback: 'Potential private chosen-stream match discovered from the web. Staff must verify current programme availability, campus, eligibility, fees, approvals/accreditation and admissions details on the linked official source before advising the student.',
     source_url: sourceUrl,
     web_verification_status: 'staff_verification_required',
     discovered_by: [provider]
@@ -181,19 +185,24 @@ function buildPrompt(student: StudentInput) {
     hostelRequired: student.hostelRequired
   };
 
-  return `Search current official Indian university/college websites for up to 6 institutions offering a course that DIRECTLY matches the student's chosen stream.
+  return `Search current official Indian PRIVATE university/college websites for up to 6 institutions offering a course that DIRECTLY matches the student's chosen stream.
 
 The chosen stream is a HARD FILTER. Do not return unrelated courses because of rankings, employability, popularity or partnership potential.
 - If chosen stream is Medicine, return direct medicine/MBBS/medical-degree pathways only. Do not return Computer Science, Business, Law or general Engineering.
 - Nursing and B-Pharma are separate streams and must not be silently substituted for Medicine.
 - If direct chosen-stream results cannot be verified from official sources, return fewer rows rather than unrelated alternatives.
 
-Use only official institution websites or authoritative government/regulator sources. Do not use Shiksha, Collegedunia, Careers360, GetMyUni or other aggregators. Never invent a campus, programme or URL.
+OWNERSHIP IS ALSO A HARD FILTER:
+- Return PRIVATE institutions only.
+- Exclude central universities, state universities, government colleges, government medical colleges, municipal/public institutions, government-aided institutions and public autonomous institutions.
+- If you cannot confidently verify that an institution is private, omit it.
+
+Use only official institution websites or authoritative government/regulator sources. Do not use Shiksha, Collegedunia, Careers360, GetMyUni or other aggregators. Never invent a campus, programme, ownership type or URL.
 
 Return ONLY one line per verified candidate in this exact format, with no prose before or after:
-RESULT|||College name|||Exact matching course/programme|||City|||State|||Strong|Good|Moderate|||Subject area|||https://official-source-url
+RESULT|||College name|||Exact matching course/programme|||City|||State|||Strong|Good|Moderate|||Subject area|||private|||https://official-source-url
 
-Use the official page that best supports the existence of the programme. Do not include fee, eligibility, accreditation, hostel, placement or scholarship claims in the line; Future Plus staff will verify those separately.
+Use the official page that best supports the programme and private institution identity. Do not include fee, eligibility, accreditation, hostel, placement or scholarship claims in the line; Future Plus staff will verify those separately.
 Student profile: ${JSON.stringify(profile)}`;
 }
 
@@ -201,8 +210,6 @@ async function searchGroq(prompt: string) {
   const apiKey = providerKey('groq');
   if (!apiKey) return null;
 
-  // Keep discovery on the fast GPT-OSS model so it does not compete with the
-  // heavier GPT-OSS-120B counselling workload for the same per-model TPM pool.
   const model = clean(process.env.GROQ_FAST_MODEL) || 'openai/gpt-oss-20b';
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -234,7 +241,7 @@ async function searchGroq(prompt: string) {
   };
   const content = messageText(data.choices?.[0]?.message?.content);
   if (extractRows(content).length) return content;
-  throw new Error('Live search returned no usable chosen-stream shortlist.');
+  throw new Error('Live search returned no usable private chosen-stream shortlist.');
 }
 
 async function searchGemini(prompt: string) {
@@ -351,10 +358,10 @@ export async function discoverWebCollegeInsights(
   const genericStatus: ProviderStatus = !anyConfigured
     ? { provider: 'live-search', status: 'not_configured', detail: 'Live discovery is temporarily unavailable.' }
     : insights.length
-      ? { provider: 'live-search', status: 'used', detail: `${insights.length} chosen-stream candidate(s) returned for staff verification.` }
+      ? { provider: 'live-search', status: 'used', detail: `${insights.length} private chosen-stream candidate(s) returned for staff verification.` }
       : anyFailure
         ? { provider: 'live-search', status: 'failed', detail: 'Live discovery is temporarily unavailable. Please try again.' }
-        : { provider: 'live-search', status: 'no_parseable_results', detail: parsedCount ? 'No candidates passed source validation.' : 'No suitable chosen-stream candidates were returned.' };
+        : { provider: 'live-search', status: 'no_parseable_results', detail: parsedCount ? 'No private candidates passed source validation.' : 'No suitable private chosen-stream candidates were returned.' };
 
   return {
     insights,

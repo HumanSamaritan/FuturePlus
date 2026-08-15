@@ -1,4 +1,5 @@
 import ScorePill from '@/components/ScorePill';
+import FutureFitAssessmentView from '@/components/FutureFitAssessment';
 import Link from 'next/link';
 import { STUDENT_STATUS } from '@/lib/constants';
 import { getCourseCatalog } from '@/lib/data';
@@ -30,6 +31,8 @@ export default async function StudentDetailPage({
   if (recError) throw new Error(recError.message);
 
   const courseById = new Map(courses.map((course: CourseWithCollege) => [course.course_id, course]));
+  const privateWebInsights = ((student.web_college_insights || []) as WebCollegeInsight[])
+    .filter((insight) => insight.ownership === 'private');
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = user
     ? await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
@@ -42,18 +45,18 @@ export default async function StudentDetailPage({
         <div>
           <span className="kicker">Student Profile</span>
           <h1>{student.first_name} {student.last_name}</h1>
-        <p className="muted">
-          {student.email || 'No email'} · {student.phone || 'No phone'} · {student.city || 'City not captured'} {student.state ? `, ${student.state}` : ''}
-        </p>
-        <div className="actions">
-          <ScorePill score={student.score} />
-          <span className="badge">Status: {student.status}</span>
-          {student.future_plus_id ? <span className="badge">{student.future_plus_id}</span> : null}
-        </div>
-        <p className="lead-owner">
-          <strong>Managing staff:</strong> {student.assigned_staff_name || 'Not assigned'}
-          <span>{student.assigned_staff_email || 'No staff email recorded'}</span>
-        </p>
+          <p className="muted">
+            {student.email || 'No email'} · {student.phone || 'No phone'} · {student.city || 'City not captured'} {student.state ? `, ${student.state}` : ''}
+          </p>
+          <div className="actions">
+            <ScorePill score={student.score} />
+            <span className="badge">Status: {student.status}</span>
+            {student.future_plus_id ? <span className="badge">{student.future_plus_id}</span> : null}
+          </div>
+          <p className="lead-owner">
+            <strong>Managing staff:</strong> {student.assigned_staff_name || 'Not assigned'}
+            <span>{student.assigned_staff_email || 'No staff email recorded'}</span>
+          </p>
         </div>
         <div className="profile-header-actions">
           <Link className="primary-button profile-edit-button" href={`/students/${student.id}/edit`}>Edit Student</Link>
@@ -107,10 +110,10 @@ export default async function StudentDetailPage({
       ) : null}
 
       <div className="card">
-        <span className="kicker">AI staff intelligence</span>
-        <h2>AI counselling and college-fit review</h2>
-        <p className="muted">AI Insights reviews verified database recommendations and separately researches live non-partner alternatives across India. Staff must verify web-discovered details before advising the student.</p>
-        <pre>{student.ai_summary || 'No summary generated yet.'}</pre>
+        <span className="kicker">Future Plus intelligence</span>
+        <h2>Student Future-Fit assessment</h2>
+        <p className="muted">A student-shareable view of chosen-stream alignment, evidence-based strengths, possible future streams and practical next steps. Staff-only interpretation is clearly separated below.</p>
+        <FutureFitAssessmentView rawSummary={student.ai_summary} />
         <form action={regenerateCounsellingSummaryAction}>
           <input type="hidden" name="studentId" value={student.id} />
           <div className="actions">
@@ -121,108 +124,39 @@ export default async function StudentDetailPage({
 
       <div className="card">
         <span className="kicker">Live web discovery</span>
-        <h2>Suggested non-partner institutions</h2>
-        <p className="muted">A lightweight web shortlist based on the student profile. Staff should verify the linked source before advising the student.</p>
+        <h2>Suggested private non-partner institutions</h2>
+        <p className="muted">A chosen-stream shortlist of private institutions only. Government, public and government-aided institutions are excluded. Staff must verify the linked official source before advising the student.</p>
         {student.web_discovery_status ? (
           <div className="discovery-status">
             <p className="muted">
               <strong>Latest search:</strong>{' '}
               {new Date(student.web_discovery_status.searched_at).toLocaleString('en-IN')} ·{' '}
-              {student.web_discovery_status.result_count || 0} result(s)
+              {privateWebInsights.length} private result(s)
             </p>
-            <ul>
-              {(student.web_discovery_status.providers || []).map((provider: {
-                provider: string;
-                status: string;
-                detail: string;
-              }) => (
-                <li key={provider.provider}>
-                  <strong>{provider.provider}:</strong> {provider.status.replaceAll('_', ' ')} — {provider.detail}
-                </li>
-              ))}
-            </ul>
           </div>
         ) : null}
         <div className="grid grid-2">
-          {((student.web_college_insights || []) as WebCollegeInsight[]).map((insight, index) => (
-            <article className="card" key={`${insight.college_name}-${insight.city}-${insight.state}`}>
-              <span className="kicker">#{index + 1} · {insight.fit_level || 'Review'} fit</span>
+          {privateWebInsights.map((insight, index) => (
+            <article className="card" key={`${insight.college_name}-${insight.course_name}-${insight.city}-${insight.state}`}>
+              <span className="kicker">#{index + 1} · {insight.fit_level || 'Review'} fit · Private</span>
               <h3>{insight.college_name}</h3>
+              {insight.course_name ? <p><strong>Programme:</strong> {insight.course_name}</p> : null}
               <p><strong>Location:</strong> {[insight.city, insight.state, insight.country].filter(Boolean).join(', ') || 'Verify location'}</p>
-              <p>{insight.fit_feedback || insight.fit_reason || 'Potential fit; staff should verify the institution against the student profile.'}</p>
+              <p>{insight.fit_feedback || insight.fit_reason || 'Potential private chosen-stream fit; staff should verify the institution against the student profile.'}</p>
               <div className="actions">
                 <ScorePill score={insight.fit_score} />
-                <a className="secondary-button" href={insight.source_url} target="_blank" rel="noreferrer">Verify source</a>
+                <a className="secondary-button" href={insight.source_url} target="_blank" rel="noreferrer">Verify official source</a>
               </div>
             </article>
           ))}
         </div>
-        {!student.web_college_insights?.length ? (
+        {!privateWebInsights.length ? (
           <p className="muted">
             {student.web_discovery_status
-              ? 'The latest web search produced no usable shortlist. Review the provider status above and regenerate.'
-              : 'Select Regenerate AI Insights to find matching non-partner institutions.'}
+              ? 'No verified private chosen-stream institutions are currently available in the latest shortlist. Regenerate to run the private-only search.'
+              : 'Select Regenerate AI Insights to search for matching private non-partner institutions.'}
           </p>
         ) : null}
-        <div style={{ display: 'none' }} aria-hidden="true">
-          <table>
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>College / Course</th>
-                <th>Fee / Duration</th>
-                <th>Location</th>
-                <th>Placements</th>
-                <th>Hostel</th>
-                <th>Source</th>
-                <th>Fit</th>
-              </tr>
-            </thead>
-            <tbody>
-              {((student.web_college_insights || []) as WebCollegeInsight[]).map((insight, index) => (
-                <tr className="recommendation-row non-partner-row" key={`${insight.college_name}-${insight.course_name}`}>
-                  <td>#{index + 1}</td>
-                  <td>
-                    <strong>{insight.college_name}</strong><br />
-                    {insight.course_name}<br />
-                    <span className="muted">{insight.subject_area} · {insight.program_level.replaceAll('_', ' ')}</span><br />
-                    <span className="muted">{insight.fit_reason}</span>
-                  </td>
-                  <td>
-                    {insight.total_fee ? `${Number(insight.total_fee).toLocaleString('en-IN')} ${insight.currency || 'INR'}` : 'Verify fee'}<br />
-                    {insight.duration || 'Verify duration'}
-                  </td>
-                  <td>{[insight.city, insight.state, insight.country].filter(Boolean).join(', ') || 'Verify'}</td>
-                  <td>
-                    Count: {insight.placement_count ?? 'Verify'}<br />
-                    Avg: {insight.average_package ? Number(insight.average_package).toLocaleString('en-IN') : 'Verify'}<br />
-                    High: {insight.highest_package ? Number(insight.highest_package).toLocaleString('en-IN') : 'Verify'}
-                  </td>
-                  <td>{insight.hostel_available === null ? 'Verify' : insight.hostel_available ? 'Yes' : 'No'}</td>
-                  <td>
-                    <a href={insight.source_url} target="_blank" rel="noreferrer">Primary source</a>
-                    {insight.additional_sources?.map((url, sourceIndex) => (
-                      <span key={url}><br /><a href={url} target="_blank" rel="noreferrer">Source {sourceIndex + 2}</a></span>
-                    ))}
-                    <br /><span className="partner-status partner-non_partner">Staff verification required</span>
-                    <br /><span className="muted">Partner: non-partner · Commission: no</span>
-                    <br /><span className="muted">POC: {[insight.poc_name, insight.poc_email].filter(Boolean).join(' / ') || 'Verify'}</span>
-                  </td>
-                  <td><ScorePill score={insight.fit_score} /></td>
-                </tr>
-              ))}
-              {!student.web_college_insights?.length ? (
-                <tr>
-                  <td colSpan={8}>
-                    {student.web_discovery_status
-                      ? 'The latest web search produced no usable rows. Review the provider status above, correct the configuration, and regenerate.'
-                      : 'Select Regenerate AI Insights to research current non-partner alternatives from the web.'}
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
       </div>
 
       <div className="form-card">
