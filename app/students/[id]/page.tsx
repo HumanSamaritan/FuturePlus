@@ -10,6 +10,7 @@ import { InternationalCollegeInsight } from '@/lib/international-college-discove
 import { updateStudentStatusAction } from '../actions';
 import { regenerateCounsellingSummaryAction } from '../regenerate-actions';
 import { refreshNationalCollegeDiscoveryAction, refreshInternationalCollegeDiscoveryAction } from '../discovery-actions';
+import { saveLinkedInProfileTextAction } from '../linkedin-actions';
 import { requestStudentDeletionAction } from '@/app/admin/deletion-actions';
 import RequestStudentDeletionButton from '@/components/RequestStudentDeletionButton';
 
@@ -39,6 +40,12 @@ export default async function StudentDetailPage({ params, searchParams }: {
   const { data: { user } } = await supabase.auth.getUser();
   const { data: profile } = user ? await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle() : { data: null };
   const isAdmin = profile?.role === 'admin';
+  const assessmentCurrent = Boolean(student.ai_summary) && student.ai_profile_dirty === false;
+  const linkedinTextPresent = Boolean(String(student.linkedin_profile_text || '').trim());
+  const chosenSubject = student.subjects_interest?.[0] || 'selected course';
+  const programmePhrase = student.desired_program_level === 'postgraduate' ? 'postgraduate' : 'undergraduate';
+  const manualNationalSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(`private ${chosenSubject} ${programmePhrase} colleges India official programme`)}`;
+  const manualInternationalSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(`private ${chosenSubject} ${programmePhrase} university international official programme`)}`;
 
   return (
     <section className="grid">
@@ -73,7 +80,7 @@ export default async function StudentDetailPage({ params, searchParams }: {
         <div className="card">
           <h2>Passion and purpose</h2><p><strong>Passion:</strong> {student.passion || '-'}</p><p><strong>Purpose:</strong> {student.purpose || '-'}</p>
           <p><strong>Strengths:</strong> {student.strengths || '-'}</p><p><strong>Constraints:</strong> {student.constraints || '-'}</p><p><strong>Career goals:</strong> {student.career_goals || '-'}</p>
-          {student.linkedin_url ? <p><strong>LinkedIn:</strong> <a href={student.linkedin_url} target="_blank" rel="noreferrer">Profile supplied</a></p> : null}
+          {student.linkedin_url ? <p><strong>LinkedIn:</strong> <a href={student.linkedin_url} target="_blank" rel="noreferrer">Open profile for staff review</a></p> : null}
         </div>
       </div>
 
@@ -84,45 +91,69 @@ export default async function StudentDetailPage({ params, searchParams }: {
         <p><strong>Experience:</strong> {student.work_experience_months ?? 0} months</p>
       </div> : null}
 
+      <div className="card" id="linkedin-ai-review">
+        <span className="kicker">LinkedIn evidence</span><h2>LinkedIn profile content for AI review</h2>
+        <p className="muted">The LinkedIn URL is never treated as scraped content. Open the profile above, then paste relevant About, Education, Experience, Projects or Skills text here if you want Future-Fit to review it.</p>
+        <form action={saveLinkedInProfileTextAction} className="grid">
+          <input type="hidden" name="studentId" value={student.id} />
+          <div className="field"><label htmlFor="linkedinProfileText">Profile text supplied for review</label><textarea id="linkedinProfileText" name="linkedinProfileText" rows={7} defaultValue={student.linkedin_profile_text || ''} placeholder="Paste relevant LinkedIn profile text here. Do not paste private messages or unnecessary personal data." /></div>
+          <div className="actions"><button className="secondary-button" type="submit">Save LinkedIn review text</button></div>
+        </form>
+        <p className="help-text">{linkedinTextPresent ? 'LinkedIn profile text is stored for review. Saving a changed version marks Future-Fit for exactly one new assessment.' : 'No LinkedIn profile text has been supplied yet.'}</p>
+      </div>
+
       <div className="card">
         <span className="kicker">Counselling intelligence</span><h2>Student Future-Fit assessment</h2>
-        <p className="muted">A student-shareable view of chosen-stream alignment, evidence-based strengths, possible future streams and practical next steps. Staff-only interpretation is separated below.</p>
+        <p className="muted">A student-shareable view of chosen-stream alignment, evidence-based strengths, ranked stream fit and practical next steps. Staff-only interpretation is separated below.</p>
         <FutureFitAssessmentView rawSummary={student.ai_summary} />
-        <form action={regenerateCounsellingSummaryAction}><input type="hidden" name="studentId" value={student.id} /><div className="actions"><button className="primary-button" type="submit">Regenerate Future-Fit assessment</button></div></form>
-        <p className="help-text">If the AI-relevant profile has not changed, regeneration uses the stored assessment instead of making another model call.</p>
+        <div className="actions">
+          <form action={regenerateCounsellingSummaryAction}><input type="hidden" name="studentId" value={student.id} /><button className="primary-button" type="submit">Update assessment if profile changed</button></form>
+          <form action={regenerateCounsellingSummaryAction}><input type="hidden" name="studentId" value={student.id} /><input type="hidden" name="force" value="true" /><button className="secondary-button" type="submit">Retry AI provider</button></form>
+        </div>
+        <p className={assessmentCurrent ? 'success-message' : 'alert'}>{assessmentCurrent ? 'Stored assessment is current. The normal update button will not call AI unless AI-relevant profile data changes.' : 'AI-relevant profile data has changed or has not yet been fingerprinted. The next normal update will make one AI call and then store the result.'}</p>
+        <p className="help-text">Use “Retry AI provider” only when you intentionally want to override the cache, for example after a temporary provider-limit failure.</p>
       </div>
 
       <div className="card discovery-section">
-        <div className="discovery-heading"><div><span className="kicker">National college discovery</span><h2>Suggested private non-partner institutions in India</h2></div>
-          <form action={refreshNationalCollegeDiscoveryAction}><input type="hidden" name="studentId" value={student.id} /><button className="secondary-button" type="submit">Refresh national colleges</button></form></div>
-        <p className="muted">Chosen-stream private institutions only. Government, public and government-aided institutions are excluded. Search results are cached for 24 hours to control cost and rate-limit usage.</p>
-        <p className="discovery-message">{statusText(student.web_discovery_status, 'No national web search has been run yet.')}</p>
+        <div className="discovery-heading"><div><span className="kicker">National college discovery</span><h2>Suggested private non-partner institutions in India</h2></div></div>
+        <p className="muted">Chosen-stream private institutions only. Results are stored and reused until the search-relevant student profile changes. A normal update with identical inputs makes no live-provider call.</p>
+        <p className="discovery-message">{statusText(student.web_discovery_status, 'No national live search has been run yet.')}</p>
+        <div className="actions">
+          <form action={refreshNationalCollegeDiscoveryAction}><input type="hidden" name="studentId" value={student.id} /><button className="secondary-button" type="submit">Update national colleges if profile changed</button></form>
+          <form action={refreshNationalCollegeDiscoveryAction}><input type="hidden" name="studentId" value={student.id} /><input type="hidden" name="force" value="true" /><button className="secondary-button" type="submit">Retry live search</button></form>
+          <a className="secondary-button" href={manualNationalSearchUrl} target="_blank" rel="noreferrer">Search official sources without AI</a>
+          <a className="secondary-button" href="#internal-database-recommendations">Use internal database</a>
+        </div>
         <div className="grid grid-2">{nationalInsights.map((insight, index) => <article className="card" key={`${insight.college_name}-${insight.course_name}-${index}`}>
           <span className="kicker">#{index + 1} · {insight.fit_level || 'Review'} fit · Private</span><h3>{insight.college_name}</h3>{insight.course_name ? <p><strong>Programme:</strong> {insight.course_name}</p> : null}
           <p><strong>Location:</strong> {[insight.city, insight.state, insight.country].filter(Boolean).join(', ') || 'Verify location'}</p><p>{insight.fit_feedback || 'Potential chosen-stream match; staff verification required.'}</p>
           <div className="actions"><ScorePill score={insight.fit_score} /><a className="secondary-button" href={insight.source_url} target="_blank" rel="noreferrer">Verify official source</a></div>
         </article>)}</div>
-        {!nationalInsights.length ? <div className="discovery-empty"><strong>National college block ready.</strong><p>No cached private chosen-stream results are currently available. Use Refresh national colleges when you want to run or renew the search.</p></div> : null}
+        {!nationalInsights.length ? <div className="discovery-empty"><strong>No cached national live-search rows.</strong><p>The internal database below remains available even when the live provider is rate-limited. You can also use “Search official sources without AI” to research the chosen stream directly.</p></div> : null}
       </div>
 
       <div className="card discovery-section international-discovery">
-        <div className="discovery-heading"><div><span className="kicker">International college discovery</span><h2>Suggested private international institutions</h2></div>
-          <form action={refreshInternationalCollegeDiscoveryAction}><input type="hidden" name="studentId" value={student.id} /><button className="secondary-button" type="submit">Refresh international colleges</button></form></div>
-        <p className="muted">This block is always available. It uses the chosen stream plus the Future-Fit assessment context. For Medicine it searches direct private medical-degree pathways only; the same direct-stream rule is used for every other subject. Results are cached for 24 hours.</p>
-        <p className="discovery-message">{statusText(student.international_discovery_status, 'No international web search has been run yet.')}</p>
+        <div className="discovery-heading"><div><span className="kicker">International college discovery</span><h2>Suggested private international institutions</h2></div></div>
+        <p className="muted">Chosen-stream private international institutions only. Results are stored and reused until the search-relevant profile or stored Future-Fit context changes.</p>
+        <p className="discovery-message">{statusText(student.international_discovery_status, 'No international live search has been run yet.')}</p>
+        <div className="actions">
+          <form action={refreshInternationalCollegeDiscoveryAction}><input type="hidden" name="studentId" value={student.id} /><button className="secondary-button" type="submit">Update international colleges if profile changed</button></form>
+          <form action={refreshInternationalCollegeDiscoveryAction}><input type="hidden" name="studentId" value={student.id} /><input type="hidden" name="force" value="true" /><button className="secondary-button" type="submit">Retry live search</button></form>
+          <a className="secondary-button" href={manualInternationalSearchUrl} target="_blank" rel="noreferrer">Search official sources without AI</a>
+        </div>
         <div className="grid grid-2">{internationalInsights.map((insight, index) => <article className="card" key={`${insight.college_name}-${insight.course_name}-${index}`}>
           <span className="kicker">#{index + 1} · {insight.fit_level} fit · Private</span><h3>{insight.college_name}</h3>{insight.course_name ? <p><strong>Programme:</strong> {insight.course_name}</p> : null}
           <p><strong>Location:</strong> {[insight.city, insight.country].filter(Boolean).join(', ') || 'Verify location'}</p><p>{insight.fit_feedback}</p>
           <div className="actions"><ScorePill score={insight.fit_score} /><a className="secondary-button" href={insight.source_url} target="_blank" rel="noreferrer">Verify official source</a></div>
         </article>)}</div>
-        {!internationalInsights.length ? <div className="discovery-empty"><strong>International college block ready.</strong><p>No cached international private chosen-stream results are currently available. The block remains visible even when the provider returns no rows or is temporarily rate-limited.</p></div> : null}
+        {!internationalInsights.length ? <div className="discovery-empty"><strong>No cached international live-search rows.</strong><p>The block remains available when the provider is exhausted. Use “Search official sources without AI” for an immediate independent search, or explicitly retry the live provider later.</p></div> : null}
       </div>
 
       <div className="form-card"><h2>Update student status</h2><p className="muted">When status changes to admitted or onboarded, the system automatically generates a student ID.</p>
         <form action={updateStudentStatusAction}><input type="hidden" name="studentId" value={student.id} /><div className="grid grid-2"><div className="field"><label htmlFor="status">Status</label><select id="status" name="status" defaultValue={student.status}>{STUDENT_STATUS.map((status) => <option key={status} value={status}>{status}</option>)}</select></div><div className="field" style={{ alignSelf: 'end' }}><button className="primary-button" type="submit">Update Status</button></div></div></form>
       </div>
 
-      <div className="table-card"><h2>College recommendations from internal database</h2><div className="partner-legend" aria-label="College partnership colour guide"><span><i className="legend-swatch preferred" />Preferred partner</span><span><i className="legend-swatch pipeline" />Partner network / pipeline</span><span><i className="legend-swatch independent" />Non-partner</span></div>
+      <div className="table-card" id="internal-database-recommendations"><h2>College recommendations from internal database</h2><div className="partner-legend" aria-label="College partnership colour guide"><span><i className="legend-swatch preferred" />Preferred partner</span><span><i className="legend-swatch pipeline" />Partner network / pipeline</span><span><i className="legend-swatch independent" />Non-partner</span></div>
         <div className="table-wrap"><table><thead><tr><th>Rank</th><th>College / Course</th><th>Fee</th><th>Location</th><th>Placements</th><th>Hostel</th><th>Partner</th><th>Fit</th></tr></thead><tbody>
           {(recommendations ?? []).map((rec) => { const course = courseById.get(rec.course_id); return <tr className={course?.partner_status === 'preferred_partner' ? 'recommendation-row preferred-partner-row' : course?.partner_status === 'pipeline_partner' ? 'recommendation-row pipeline-partner-row' : 'recommendation-row non-partner-row'} key={rec.id}>
             <td>#{rec.rank}</td><td><strong>{course?.college_name || 'Unknown college'}</strong><br />{course?.course_name || rec.course_id}<br /><span className="muted">{rec.reason}</span>{rec.staff_hidden_reason ? <p className="alert"><strong>Staff-only:</strong> {rec.staff_hidden_reason}</p> : null}</td>
