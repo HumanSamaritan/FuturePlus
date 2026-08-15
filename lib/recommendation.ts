@@ -43,6 +43,29 @@ const SUBJECT_RULES: Record<string, SubjectRule> = {
   sustainability: { direct: ['sustainability', 'environmental', 'renewable energy', 'climate'] }
 };
 
+const PG_ONLY_TITLE_PATTERNS = [
+  /\bmba\b/i,
+  /\bmaster(?:'s|s)?\b/i,
+  /\bm\.\s*(?:tech|sc|com|a|des|pharm)\b/i,
+  /\bmsc\b/i,
+  /\bmtech\b/i,
+  /\bm\.b\.a\b/i,
+  /\bpgdm\b/i,
+  /\bpgpm\b/i,
+  /\bpost\s*graduate\b/i,
+  /\bexecutive\s+mba\b/i
+];
+
+const UG_ONLY_TITLE_PATTERNS = [
+  /\bbachelor(?:'s|s)?\b/i,
+  /\bb\.\s*(?:tech|sc|com|a|des|pharm|arch)\b/i,
+  /\bbtech\b/i,
+  /\bbsc\b/i,
+  /\bbba\b/i,
+  /\bmbbs\b/i,
+  /\bllb\b/i
+];
+
 function clamp(value: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
 }
@@ -63,6 +86,17 @@ function courseText(course: CourseWithCollege) {
 function hasTerm(text: string, term: string) {
   const normalizedTerm = normalize(term);
   return Boolean(normalizedTerm) && text.includes(normalizedTerm);
+}
+
+function programmeTitleMatches(course: CourseWithCollege, requestedLevel: 'undergraduate' | 'postgraduate') {
+  const title = course.course_name || '';
+  if (requestedLevel === 'undergraduate' && PG_ONLY_TITLE_PATTERNS.some((pattern) => pattern.test(title))) {
+    return false;
+  }
+  if (requestedLevel === 'postgraduate' && UG_ONLY_TITLE_PATTERNS.some((pattern) => pattern.test(title))) {
+    return false;
+  }
+  return true;
 }
 
 function subjectRelevance(course: CourseWithCollege, interests: string[]): SubjectMatch {
@@ -203,7 +237,10 @@ export function generateRecommendations(
   const requestedProgramLevel = student.programLevel || 'undergraduate';
 
   const scored = courses
-    .filter((course) => (course.program_level || 'undergraduate') === requestedProgramLevel)
+    .filter((course) =>
+      (course.program_level || 'undergraduate') === requestedProgramLevel
+      && programmeTitleMatches(course, requestedProgramLevel)
+    )
     .map((course) => {
       const subjectMatch = subjectRelevance(course, student.subjectsInterest);
       if (subjectMatch.tier === 'none') return null;

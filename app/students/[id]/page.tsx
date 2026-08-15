@@ -6,7 +6,8 @@ import { getCourseCatalog } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
 import { CourseWithCollege } from '@/lib/types';
 import { WebCollegeInsight } from '@/lib/web-college-discovery';
-import { regenerateCounsellingSummaryAction, updateStudentStatusAction } from '../actions';
+import { updateStudentStatusAction } from '../actions';
+import { regenerateCounsellingSummaryAction } from '../regenerate-actions';
 import { requestStudentDeletionAction } from '@/app/admin/deletion-actions';
 import RequestStudentDeletionButton from '@/components/RequestStudentDeletionButton';
 
