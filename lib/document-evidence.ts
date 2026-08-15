@@ -1,5 +1,4 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { PDFParse } from 'pdf-parse';
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 const MAX_EXTRACTED_CHARS = 30000;
@@ -22,6 +21,10 @@ function normalizeExtractedText(value: string) {
 }
 
 async function extractPdfText(buffer: Buffer) {
+  // Load the PDF engine only when a PDF is actually uploaded. Keeping this
+  // import out of module scope prevents pdfjs/canvas initialisation from
+  // running while the Edit Student page itself is rendered on Vercel.
+  const { PDFParse } = await import('pdf-parse');
   const parser = new PDFParse({ data: buffer });
   try {
     const result = await parser.getText();
@@ -58,6 +61,9 @@ export async function storeStudentDocument(
       extractedText = await extractPdfText(buffer);
       extractionStatus = extractedText ? 'extracted' : 'no_text';
     } catch (error) {
+      // A PDF extraction problem must never prevent the student's profile from
+      // being saved. The original private PDF is still stored and staff can
+      // use the adjacent pasted-text field when extraction is unavailable.
       console.error('[student-document] PDF text extraction failed', { kind, name: fileValue.name, error });
       extractionStatus = 'no_text';
     }
