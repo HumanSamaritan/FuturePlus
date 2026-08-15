@@ -10,9 +10,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@napi-rs/canvas": "1.0.6",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
     "next": "latest",
+    "pdf-parse": "2.4.5",
     "react": "latest",
     "react-dom": "latest",
     "zod": "latest"

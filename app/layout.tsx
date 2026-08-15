@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import FormDraftAutoSave from '@/components/FormDraftAutoSave';
 import Header from '@/components/Header';
 import './globals.css';
+import './workspace-overrides.css';
 
 export const metadata: Metadata = {
   title: 'Future Plus Counselling MVP',
