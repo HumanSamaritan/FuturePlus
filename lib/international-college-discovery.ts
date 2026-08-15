@@ -87,19 +87,32 @@ export async function discoverInternationalCollegeInsights(student: StudentInput
     if (!response.ok) throw new Error(`International search HTTP ${response.status}`);
     const data = JSON.parse(text) as { choices?: Array<{ message?: { content?: string } }> };
     const content = data.choices?.[0]?.message?.content || '';
-    const insights = content.split(/\r?\n/).map((line) => line.trim()).filter((line) => line.startsWith('RESULT|||')).map((line) => {
-      const p = line.split('|||').map((x) => x.trim());
-      if (p.length < 10 || p[8].toLowerCase() !== 'private') return null;
-      const url = safeUrl(p.slice(9).join('|||'));
-      if (!url) return null;
-      const fit = level(p[5]);
-      return {
-        college_name: p[1], course_name: p[2], city: p[3] || null, country: p[4] || 'International', fit_level: fit,
-        fit_score: score(fit), subject_area: p[6] || undefined, ownership: 'private' as const,
-        fit_feedback: 'Potential international chosen-stream match. Staff must verify programme structure, entry requirements, fees, licensing/recognition and admissions details on the official source.',
-        source_url: url, web_verification_status: 'staff_verification_required' as const
-      };
-    }).filter((x): x is InternationalCollegeInsight => Boolean(x)).slice(0, 6);
+    const insights = content
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith('RESULT|||'))
+      .map((line): InternationalCollegeInsight | null => {
+        const p = line.split('|||').map((x) => x.trim());
+        if (p.length < 10 || p[8].toLowerCase() !== 'private') return null;
+        const url = safeUrl(p.slice(9).join('|||'));
+        if (!url) return null;
+        const fit = level(p[5]);
+        return {
+          college_name: p[1],
+          course_name: p[2] || undefined,
+          city: p[3] || null,
+          country: p[4] || 'International',
+          fit_level: fit,
+          fit_score: score(fit),
+          subject_area: p[6] || undefined,
+          ownership: 'private',
+          fit_feedback: 'Potential international chosen-stream match. Staff must verify programme structure, entry requirements, fees, licensing/recognition and admissions details on the official source.',
+          source_url: url,
+          web_verification_status: 'staff_verification_required'
+        };
+      })
+      .filter((x): x is InternationalCollegeInsight => x !== null)
+      .slice(0, 6);
     return { insights, status: { searched_at: searchedAt, providers: [{ provider: 'live-search', status: insights.length ? 'used' : 'no_parseable_results', detail: insights.length ? `${insights.length} international private candidate(s) returned for staff verification.` : 'No suitable international private chosen-stream candidates were returned.' }], result_count: insights.length } };
   } catch (error) {
     console.error('[international-college-discovery] provider failed', error);
