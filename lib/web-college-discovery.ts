@@ -43,6 +43,18 @@ function providerKey(provider: 'groq' | 'gemini' | 'openrouter') {
   return specific || (legacyProvider === provider ? clean(process.env.AI_API_KEY) : undefined);
 }
 
+function groqPrimaryModel() {
+  return clean(process.env.GROQ_PRIMARY_MODEL)
+    || clean(process.env.GROQ_MODEL)
+    || 'openai/gpt-oss-120b';
+}
+
+function groqFastModel() {
+  return clean(process.env.GROQ_FAST_MODEL)
+    || clean(process.env.GROQ_MODEL)
+    || 'openai/gpt-oss-20b';
+}
+
 function messageText(content: unknown) {
   if (typeof content === 'string') return content.trim();
   if (!Array.isArray(content)) return '';
@@ -142,7 +154,7 @@ Student: ${JSON.stringify(profile)}`;
 }
 
 async function formatGroqEvidence(apiKey: string, evidence: string) {
-  const model = clean(process.env.GROQ_MODEL) || 'llama-3.1-8b-instant';
+  const model = groqFastModel();
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
@@ -153,6 +165,8 @@ async function formatGroqEvidence(apiKey: string, evidence: string) {
         content: `Return a valid json object (JSON) in the form {"results":[...]}. Convert this search evidence into at most 6 rows with only college_name, city, state, fit_level, fit_feedback and source_url. Use only supplied evidence.\n${evidence.slice(0, 3000)}`
       }],
       response_format: { type: 'json_object' },
+      reasoning_effort: 'low',
+      reasoning_format: 'hidden',
       temperature: 0.1,
       max_completion_tokens: 1200
     }),
@@ -171,7 +185,7 @@ async function formatGroqEvidence(apiKey: string, evidence: string) {
 async function searchGroq(prompt: string) {
   const apiKey = providerKey('groq');
   if (!apiKey) return null;
-  const model = clean(process.env.GROQ_SEARCH_MODEL) || 'groq/compound-mini';
+  const model = clean(process.env.GROQ_SEARCH_MODEL) || 'groq/compound';
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
