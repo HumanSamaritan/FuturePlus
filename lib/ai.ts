@@ -6,7 +6,7 @@ type GeminiResponse = {
 };
 
 type ChatCompletionResponse = {
-  choices?: Array<{ message?: { content?: string } }>;
+  choices?: Array<{ message?: { content?: string }> }>;
   error?: { message?: string; code?: string };
 };
 
@@ -72,8 +72,6 @@ function getAiConfigurations(): AiConfiguration[] {
     }];
   });
 
-  // Backward-compatible single-provider configuration. Add it when the same
-  // provider was not already configured with its provider-specific key.
   const requestedProvider = (cleanEnv(process.env.AI_PROVIDER) || 'gemini').toLowerCase();
   const provider = supportedProviders.includes(requestedProvider as AiProvider)
     ? requestedProvider as AiProvider
@@ -231,7 +229,7 @@ export async function generateCounsellingSummary(
     return [
       `${student.firstName} ${student.lastName} is seeking ${programmeLabel} counselling in ${student.subjectsInterest.join(', ') || 'open subjects'}.`,
       `The verified college-fit engine shortlisted ${shortlistedColleges.length} matching course options. The leading score is ${recommendations[0]?.fitScore ?? 'not available'}/100.`,
-      'AI Insights are not configured. Add one or more provider API keys in Vercel to generate the detailed review.',
+      'AI-assisted counselling is temporarily unavailable. The verified college-fit recommendations remain available for staff review.',
       'Staff must verify current eligibility, fees, placements, hostel availability and admissions dates directly with each institution before advising the student.'
     ].join('\n\n');
   }
@@ -275,19 +273,18 @@ ${JSON.stringify(shortlistedColleges, null, 2)}`;
   const successfulResults = providerResults.filter(
     (result): result is { ai: AiConfiguration; text: string } => Boolean(result.text)
   );
-  const providerStatus = providerResults.map((result) =>
-    `${result.ai.provider} (${result.ai.model}): ${result.text ? 'used' : 'unavailable'}`
-  ).join(', ');
 
   if (!successfulResults.length) {
-    const failures = providerResults.map((result) =>
-      `${result.ai.provider}: ${result.error || 'no response'}`
-    ).join('; ');
-    return `AI Insights could not be generated (${failures}). The verified college-fit table below is still available for staff review.`;
+    console.error('[ai] all configured insight providers failed', providerResults.map((result) => ({
+      provider: result.ai.provider,
+      model: result.ai.model,
+      error: result.error || 'no response'
+    })));
+    return 'AI-assisted counselling is temporarily unavailable. Please try again shortly. The verified college-fit recommendations remain available for staff review.';
   }
 
   if (successfulResults.length === 1) {
-    return `${successfulResults[0].text}\n\nAI provider status: ${providerStatus}`;
+    return successfulResults[0].text;
   }
 
   const synthesisPrompt = `Create one final Future Plus AI Insights report from the independent model analyses below.
@@ -305,13 +302,11 @@ ${successfulResults.map((result, index) =>
   ).join('\n\n')}`;
 
   try {
-    const consolidated = await callProvider(successfulResults[0].ai, synthesisPrompt);
-    return `${consolidated}\n\nAI provider status: ${providerStatus}`;
+    return await callProvider(successfulResults[0].ai, synthesisPrompt);
   } catch (error) {
     console.error('[ai] multi-provider synthesis failed', error);
-    const combined = successfulResults.map((result, index) =>
+    return successfulResults.map((result, index) =>
       `Independent AI Insight ${index + 1}\n${result.text}`
     ).join('\n\n---\n\n');
-    return `${combined}\n\nAI provider status: ${providerStatus}`;
   }
 }
