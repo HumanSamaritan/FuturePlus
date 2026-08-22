@@ -11,8 +11,19 @@ export default async function Header() {
   noStore();
   const pathname = (await headers()).get('x-future-plus-pathname') || '/';
   const normalizedPath = pathname.toLowerCase();
+  const isFrozenPublicRoot = normalizedPath === '/';
   const isNeutralLogin = normalizedPath === '/staff-login';
   const isWorkspaceRoute = workspacePrefixes.some((prefix) => normalizedPath.startsWith(prefix));
+
+  if (isFrozenPublicRoot) {
+    return (
+      <header className="site-header auth-neutral-header">
+        <div className="neutral-brand-mark">FP</div>
+        <div className="neutral-brand-copy"><strong>Future Plus Education</strong><small>Public platform temporarily unavailable</small></div>
+      </header>
+    );
+  }
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isStaff = Boolean(user && isAllowedUserEmail(user.email));
