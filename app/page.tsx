@@ -1,5 +1,3 @@
-import Link from 'next/link';
-
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -28,14 +26,6 @@ export default function FrozenFuturePlusPage() {
         <h1 style={{ marginTop: 14 }}>This platform is temporarily unavailable.</h1>
         <p className="muted" style={{ maxWidth: 620, margin: '18px auto 0' }}>
           Public access to the Future Plus platform is currently paused. Existing application code and data are retained so the service can be restored when required.
-        </p>
-        <div style={{ marginTop: 28 }}>
-          <Link href="/Staff-login" className="primary-button">
-            Authorised Workspace Sign In
-          </Link>
-        </div>
-        <p className="help-text" style={{ marginTop: 18 }}>
-          Only the authorised staff workspace remains available while the public website is frozen.
         </p>
       </div>
     </section>
