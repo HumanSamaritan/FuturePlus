@@ -1,27 +1,16 @@
-import type { Metadata } from 'next';
-import FormDraftAutoSave from '@/components/FormDraftAutoSave';
-import Header from '@/components/Header';
-import './globals.css';
-import './workspace-overrides.css';
+import type { Metadata } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'Future Plus Counselling MVP',
-  description: 'Student admissions counselling and college recommendation MVP for Future Plus.',
-  icons: {
-    icon: '/future-plus-logo.jpg',
-    shortcut: '/future-plus-logo.jpg',
-    apple: '/future-plus-logo.jpg'
-  }
+  title: "PSLE Science MCQ Mission | Future Plus",
+  description: "A child-friendly PSLE Science MCQ self-learning coach with adaptive practice, concept explanations, mistake review and an 18-day revision sprint.",
+  robots: { index: false, follow: false }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>
-        <Header />
-        <main>{children}</main>
-        <FormDraftAutoSave />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
