@@ -204,7 +204,7 @@ export default function PSLECompanion(){
               if(selectable.length>80){pageTexts.push(`Question page ${pageNo}\n${selectable}`);continue;}
               const viewport=page.getViewport({scale:1.35});const canvas=document.createElement("canvas");const ctx=canvas.getContext("2d");
               if(!ctx)continue;canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
-              await page.render({canvasContext:ctx,viewport}).promise;
+              await page.render({canvas,canvasContext:ctx,viewport}).promise;
               const result=await worker.recognize(canvas,{}, {text:true});pageTexts.push(`Question page ${pageNo}\n${result?.data?.text||""}`);
             }
             extracted=pageTexts.join("\n\n");
